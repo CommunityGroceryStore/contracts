@@ -2,10 +2,14 @@
 pragma solidity ^0.8.28;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {
+  AccessControlEnumerable
+} from "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
 
-contract CGSToken is ERC20, Ownable {
+contract CGSToken is ERC20, AccessControlEnumerable {
+  bytes32 public constant TOKEN_ADMIN_ROLE = keccak256("TOKEN_ADMIN_ROLE");
+
   bool public isTaxPaused = false;
   bool public isTaxPermanentlyDisabled = false;
   uint256 public constant TAX_DIVISOR = 100_000;
@@ -14,7 +18,7 @@ contract CGSToken is ERC20, Ownable {
   uint256 public taxSellRate = 1_000; // 1% sell tax
   mapping(address => bool) public isExemptFromTax;
   mapping(address => bool) public liquidityProviders;
-  address public treasuryAdress;
+  address public treasuryAddress;
 
   event TaxExemptionAdded(address indexed account);
   event TaxExemptionRemoved(address indexed account);
@@ -30,7 +34,12 @@ contract CGSToken is ERC20, Ownable {
   constructor(
     address newOwner,
     uint256 initialSupply
-  ) payable ERC20("Community Grocery Store", "CGS") Ownable(msg.sender) {
+  ) payable ERC20("Community Grocery Store", "CGS") {
+    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
+    _grantRole(TOKEN_ADMIN_ROLE, msg.sender);
+    _grantRole(TOKEN_ADMIN_ROLE, newOwner);
+
     _mint(newOwner, initialSupply);
 
     setTreasuryAddress(newOwner);
@@ -39,38 +48,39 @@ contract CGSToken is ERC20, Ownable {
     addTaxExemption(address(0xdead));
     addTaxExemption(address(0));
 
-    transferOwnership(newOwner);
+    renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    renounceRole(TOKEN_ADMIN_ROLE, msg.sender);
   }
 
   receive() external payable {}
 
-  function addTaxExemption(address account) public onlyOwner {
+  function addTaxExemption(address account) public onlyRole(TOKEN_ADMIN_ROLE) {
     isExemptFromTax[account] = true;
     emit TaxExemptionAdded(account);
   }
 
-  function removeTaxExemption(address account) public onlyOwner {
+  function removeTaxExemption(address account) public onlyRole(TOKEN_ADMIN_ROLE) {
     isExemptFromTax[account] = false;
     emit TaxExemptionRemoved(account);
   }
 
-  function pauseTax() public onlyOwner {
+  function pauseTax() public onlyRole(TOKEN_ADMIN_ROLE) {
     isTaxPaused = true;
     emit TaxPaused();
   }
 
-  function unpauseTax() public onlyOwner {
+  function unpauseTax() public onlyRole(TOKEN_ADMIN_ROLE) {
     isTaxPaused = false;
     emit TaxUnpaused();
   }
 
-  function permanentlyDisableTax() public onlyOwner {
+  function permanentlyDisableTax() public onlyRole(TOKEN_ADMIN_ROLE) {
     pauseTax();
     isTaxPermanentlyDisabled = true;
     emit TaxPermanentlyDisabled();
   }
 
-  function setBuyTaxRate(uint256 newTaxBuyRate) public onlyOwner {
+  function setBuyTaxRate(uint256 newTaxBuyRate) public onlyRole(TOKEN_ADMIN_ROLE) {
     require(!isTaxPermanentlyDisabled, "Tax is permanently disabled");
     require(
       newTaxBuyRate <= MAX_TAX_RATE,
@@ -80,7 +90,7 @@ contract CGSToken is ERC20, Ownable {
     emit TaxBuyRateSet(taxBuyRate);
   }
 
-  function setSellTaxRate(uint256 newTaxSellRate) public onlyOwner {
+  function setSellTaxRate(uint256 newTaxSellRate) public onlyRole(TOKEN_ADMIN_ROLE) {
     require(!isTaxPermanentlyDisabled, "Tax is permanently disabled");
     require(
       newTaxSellRate <= MAX_TAX_RATE,
@@ -90,41 +100,41 @@ contract CGSToken is ERC20, Ownable {
     emit TaxSellRateSet(taxSellRate);
   }
 
-  function addLiquidityProvider(address provider) public onlyOwner {
+  function addLiquidityProvider(address provider) public onlyRole(TOKEN_ADMIN_ROLE) {
     liquidityProviders[provider] = true;
     emit LiquidityProviderAdded(provider);
   }
 
-  function removeLiquidityProvider(address provider) public onlyOwner {
+  function removeLiquidityProvider(address provider) public onlyRole(TOKEN_ADMIN_ROLE) {
     liquidityProviders[provider] = false;
     emit LiquidityProviderRemoved(provider);
   }
 
   function getTreasuryAddress() public view returns (address) {
-    return treasuryAdress;
+    return treasuryAddress;
   }
 
-  function setTreasuryAddress(address newTreasuryAddress) public onlyOwner {
+  function setTreasuryAddress(address newTreasuryAddress) public onlyRole(TOKEN_ADMIN_ROLE) {
     require(newTreasuryAddress != address(0), "Invalid treasury address");
     require(newTreasuryAddress != address(0xdead), "Invalid treasury address");
-    treasuryAdress = newTreasuryAddress;
+    treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
   }
 
-  function withdrawETH() external onlyOwner {
+  function withdrawETH() external onlyRole(TOKEN_ADMIN_ROLE) {
     uint256 balance = address(this).balance;
     require(balance > 0, "No ETH to withdraw");
     
-    (bool success, ) = payable(owner()).call{value: balance}("");
+    (bool success, ) = payable(treasuryAddress).call{value: balance}("");
     require(success, "ETH withdrawal failed");
   }
 
-  function withdrawERC20(address tokenAddress) external onlyOwner {
+  function withdrawERC20(address tokenAddress) external onlyRole(TOKEN_ADMIN_ROLE) {
     IERC20 token = IERC20(tokenAddress);
     uint256 balance = token.balanceOf(address(this));
     require(balance > 0, "No tokens to withdraw");
     
-    bool success = token.transfer(owner(), balance);
+    bool success = token.transfer(treasuryAddress, balance);
     require(success, "ERC20 withdrawal failed");
   }
 
@@ -151,7 +161,7 @@ contract CGSToken is ERC20, Ownable {
       uint256 taxAmount = (amount * taxRate) / TAX_DIVISOR;
       amount -= taxAmount;
 
-      super._update(from, treasuryAdress, taxAmount);
+      super._update(from, treasuryAddress, taxAmount);
     }
 
     super._update(from, to, amount);

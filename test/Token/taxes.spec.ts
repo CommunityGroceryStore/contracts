@@ -91,7 +91,7 @@ describe('Token - Taxes', function () {
   })
 
   describe('Administration - Tax Exemptions', function () {
-    it('Allows owner to add tax exemptions', async function () {
+    it('Allows Token Admins to add tax exemptions', async function () {
       const {
         token,
         owner,
@@ -113,8 +113,7 @@ describe('Token - Taxes', function () {
       expect(addTaxExemptionEvent).to.exist
     })
 
-    it('Allows Token Admins to add tax exemptions')
-    it('Prevents non-owner from adding tax exemptions', async function () {
+    it('Prevents others from adding tax exemptions', async function () {
       const {
         token,
         alice
@@ -126,7 +125,7 @@ describe('Token - Taxes', function () {
       expect(await token.isExemptFromTax(alice.address)).to.equal(false)
     })
 
-    it('Allows owner to remove tax exemptions', async function () {
+    it('Allows Token Admins to remove tax exemptions', async function () {
       const {
         token,
         owner,
@@ -150,8 +149,8 @@ describe('Token - Taxes', function () {
       )
       expect(removeTaxExemptionEvent).to.exist
     })
-    it('Allows Token Admins to remove tax exemptions')
-    it('Prevents non-owner from removing tax exemptions', async function () {
+
+    it('Prevents others from removing tax exemptions', async function () {
       const {
         token,
         owner,
@@ -169,7 +168,7 @@ describe('Token - Taxes', function () {
   })
 
   describe('Administration - Liquidity Providers', function () {
-    it('Allows owner to add liquidity provider address', async function () {
+    it('Allows Token Admins to add liquidity provider address', async function () {
       const {
         token,
         owner,
@@ -191,8 +190,7 @@ describe('Token - Taxes', function () {
       expect(addLiquidityProviderEvent).to.exist
     })
 
-    it('Allows Token Admins to add liquidity provider address')
-    it('Prevents non-owner from adding liquidity provider address', async function () {
+    it('Prevents others from adding liquidity provider address', async function () {
       const {
         token,
         alice,
@@ -206,7 +204,7 @@ describe('Token - Taxes', function () {
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(false)
     })
 
-    it('Allows owner to remove liquidity provider address', async function () {
+    it('Allows Token Admins to remove liquidity provider address', async function () {
       const {
         token,
         owner,
@@ -230,8 +228,8 @@ describe('Token - Taxes', function () {
       )
       expect(removeLiquidityProviderEvent).to.exist
     })
-    it('Allows Token Admins to remove liquidity provider address')
-    it('Prevents non-owner from removing liquidity provider address', async function () {
+
+    it('Prevents others from removing liquidity provider address', async function () {
       const {
         token,
         owner,
@@ -250,7 +248,7 @@ describe('Token - Taxes', function () {
   })
 
   describe('Administration - Pausing & Disabling', function () {
-    it('Allows owner to pause taxes', async function () {
+    it('Allows Token Admins to pause taxes', async function () {
       const {
         token,
         owner
@@ -266,8 +264,8 @@ describe('Token - Taxes', function () {
       )
       expect(taxPausedEvents.length).to.equal(1)
     })
-    it('Allows Token Admins to pause taxes')
-    it('Prevents non-owner from pausing taxes', async function () {
+
+    it('Prevents others from pausing taxes', async function () {
       const {
         token,
         alice
@@ -278,7 +276,7 @@ describe('Token - Taxes', function () {
       expect(await token.isTaxPaused()).to.equal(false)
     })
 
-    it('Allows owner to unpause taxes', async function () {
+    it('Allows Token Admins to unpause taxes', async function () {
       const {
         token,
         owner
@@ -297,8 +295,8 @@ describe('Token - Taxes', function () {
       )
       expect(taxUnpausedEvents.length).to.equal(1)
     })
-    it('Allows Token Admins to unpause taxes')
-    it('Prevents non-owner from unpausing taxes', async function () {
+
+    it('Prevents others from unpausing taxes', async function () {
       const {
         token,
         owner,
@@ -313,7 +311,7 @@ describe('Token - Taxes', function () {
       expect(await token.isTaxPaused()).to.equal(true)
     })
 
-    it('Allows owner to permanently disable taxes', async function () {
+    it('Allows Token Admins to permanently disable taxes', async function () {
       const {
         token,
         owner
@@ -329,8 +327,8 @@ describe('Token - Taxes', function () {
       )
       expect(taxPermanentlyDisabledEvents.length).to.equal(1)
     })
-    it('Allows Token Admins to permanently disable taxes')
-    it('Prevents non-owner from permanently disabling taxes', async function () {
+
+    it('Prevents others from permanently disabling taxes', async function () {
       const {
         token,
         alice
@@ -345,7 +343,7 @@ describe('Token - Taxes', function () {
   })
 
   describe('Administration - Tax Rates', function () {
-    it('Allows owner to set buy tax rate', async function () {
+    it('Allows Token Admins to set buy tax rate', async function () {
       const {
         token,
         owner
@@ -364,8 +362,8 @@ describe('Token - Taxes', function () {
       )
       expect(taxBuyRateSetEvent).to.exist
     })
-    it('Allows Token Admins to set buy tax rate')
-    it('Prevents non-owner from setting buy tax rate', async function () {
+
+    it('Prevents others from setting buy tax rate', async function () {
       const {
         token,
         alice
@@ -375,6 +373,7 @@ describe('Token - Taxes', function () {
       await expect(token.connect(alice).setBuyTaxRate(5_000)).to.be.reverted
       expect(await token.taxBuyRate()).to.equal(1_000)
     })
+
     it('Prevent buy tax rate from being set after taxes are permanently disabled', async function () {
       const {
         token,
@@ -389,7 +388,7 @@ describe('Token - Taxes', function () {
       expect(await token.taxBuyRate()).to.equal(1_000)
     })
 
-    it('Allows owner to set sell tax rate', async function () {
+    it('Allows Token Admins to set sell tax rate', async function () {
       const {
         token,
         owner
@@ -408,8 +407,8 @@ describe('Token - Taxes', function () {
       )
       expect(taxSellRateSetEvent).to.exist
     })
-    it('Allows Token Admins to set sell tax rate')
-    it('Prevents non-owner from setting sell tax rate', async function () {
+
+    it('Prevents others from setting sell tax rate', async function () {
       const {
         token,
         alice
@@ -419,6 +418,7 @@ describe('Token - Taxes', function () {
       await expect(token.connect(alice).setSellTaxRate(5_000)).to.be.reverted
       expect(await token.taxSellRate()).to.equal(1_000)
     })
+
     it('Prevent sell tax rate from being set after taxes are permanently disabled', async function () {
       const {
         token,
@@ -432,6 +432,7 @@ describe('Token - Taxes', function () {
         .to.be.revertedWith('Tax is permanently disabled')
       expect(await token.taxSellRate()).to.equal(1_000)
     })
+
     it('Allows buy tax rate to be set to 0%', async function () {
       const {
         token,
@@ -442,6 +443,7 @@ describe('Token - Taxes', function () {
       await token.connect(owner).setBuyTaxRate(0)
       expect(await token.taxBuyRate()).to.equal(0)
     })
+
     it('Prevents buy tax rate from being set to above 20%', async function () {
       const {
         token,
@@ -453,6 +455,7 @@ describe('Token - Taxes', function () {
         .to.be.revertedWith('Tax rate cannot exceed MAX_TAX_RATE')
       expect(await token.taxBuyRate()).to.equal(1_000)
     })
+
     it('Allows sell tax rate to be set to 0%', async function () {
       const {
         token,
@@ -463,6 +466,7 @@ describe('Token - Taxes', function () {
       await token.connect(owner).setSellTaxRate(0)
       expect(await token.taxSellRate()).to.equal(0)
     })
+
     it('Prevents sell tax rate from being set to above 20%', async function () {
       const {
         token,
@@ -477,7 +481,7 @@ describe('Token - Taxes', function () {
   })
 
   describe('Administration - Treasury', function () {
-    it('Allows owner to set treasury address', async function () {
+    it('Allows Token Admins to set treasury address', async function () {
       const {
         token,
         owner,
@@ -499,9 +503,7 @@ describe('Token - Taxes', function () {
       expect(treasuryAddressSetEvent).to.exist
     })
 
-    it('Allows Token Admins to set treasury address')
-
-    it('Prevents non-owner from setting treasury address', async function () {
+    it('Prevents others from setting treasury address', async function () {
       const {
         token,
         alice,
@@ -513,6 +515,7 @@ describe('Token - Taxes', function () {
         .to.be.reverted
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
     })
+
     it('Prevents treasury address from being set to burn addresses', async function () {
       const {
         token,

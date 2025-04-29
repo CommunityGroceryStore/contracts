@@ -1,5 +1,6 @@
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { expect } from 'chai'
+import hre from 'hardhat'
 
 import { deployTokenContract } from './setup'
 
@@ -15,13 +16,17 @@ describe('Token - Deployment', function () {
       expect(await token.balanceOf(owner.address)).to.equal(TOTAL_SUPPLY_ATOMIC)
     })
 
-    it('Should transfer ownership to owner', async function () {
+    it('Should grant DEFAULT_ADMIN_ROLE and TOKEN_ADMIN_ROLE to owner', async function () {
       const {
         token,
         owner
       } = await loadFixture(deployTokenContract)
 
-      expect(await token.owner()).to.equal(owner.address)
+      const defaultAdmins = await token.getRoleMembers(await token.DEFAULT_ADMIN_ROLE())
+      const tokenAdmins = await token.getRoleMembers(await token.TOKEN_ADMIN_ROLE())
+
+      expect(defaultAdmins).to.deep.equal([ owner.address ])
+      expect(tokenAdmins).to.deep.equal([ owner.address ])
     })
 
     it('Should deploy with decimals set to 18', async function () {

@@ -5,7 +5,7 @@ import hre from 'hardhat'
 import { deployTokenContract } from './setup'
 
 describe('Token - Withdraw Utility', function () {
-  it('Allows owner to withdraw ETH', async function () {
+  it('Allows Token Admins to withdraw ETH', async function () {
     const { token, alice, owner } = await loadFixture(deployTokenContract)
 
     const tokenAddress = await token.getAddress()
@@ -30,8 +30,7 @@ describe('Token - Withdraw Utility', function () {
     expect(finalBalance).to.be.gt(initialBalance)
   })
 
-  it('Allows Token Admin to withdraw ETH')
-  it('Prevents non-owners from withdrawing ETH', async function () {
+  it('Prevents others from withdrawing ETH', async function () {
     const { token, alice } = await loadFixture(deployTokenContract)
 
     const tokenAddress = await token.getAddress()
@@ -51,7 +50,7 @@ describe('Token - Withdraw Utility', function () {
     await expect(token.connect(alice).withdrawETH()).to.be.reverted
   })
 
-  it('Allows owner to withdraw ERC20', async function () {
+  it('Allows Token Admins to withdraw ERC20', async function () {
     const { token, owner } = await loadFixture(deployTokenContract)
 
     const tokenAddress = await token.getAddress()
@@ -71,8 +70,8 @@ describe('Token - Withdraw Utility', function () {
     const finalBalance = await token.balanceOf(owner.address)
     expect(finalBalance).to.equal(initialBalance)
   })
-  it('Allows Token Admin to withdraw ERC20')
-  it('Prevents non-owners from withdrawing ERC20', async function () {
+
+  it('Prevents others from withdrawing ERC20', async function () {
     const { token, alice, owner } = await loadFixture(deployTokenContract)
 
     const tokenAddress = await token.getAddress()
