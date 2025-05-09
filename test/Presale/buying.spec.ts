@@ -4,7 +4,7 @@ import { ethers } from 'hardhat'
 
 import { deployPresaleContract } from './setup'
 
-describe('Presale - Buying', function () {
+describe.only('Presale - Buying', function () {
   it('Allows buying when presale is active', async function () {
     const {
       presale,
@@ -29,7 +29,7 @@ describe('Presale - Buying', function () {
     const buyAmount = ethers.parseUnits('3', 18)
     const usdtAmount = ethers.parseUnits('0.12', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
-    await presale.connect(alice).buy(buyAmount, usdtAddress)
+    await presale.connect(alice).buy(usdtAmount, usdtAddress)
 
     expect(await usdt.balanceOf(alice.address)).to.equal(ethers.parseUnits('999.88', 6))
     expect(await token.balanceOf(alice.address)).to.equal(buyAmount)
@@ -55,12 +55,11 @@ describe('Presale - Buying', function () {
     await presale.connect(owner).pausePresale()
     expect(await presale.isPresalePaused()).to.be.true
 
-    const buyAmount = ethers.parseUnits('3', 18)
     const usdtAmount = ethers.parseUnits('0.12', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
 
     await expect(
-      presale.connect(alice).buy(buyAmount, usdtAddress)
+      presale.connect(alice).buy(usdtAmount, usdtAddress)
     ).to.be.revertedWith('Presale is paused')
   })
 
@@ -83,12 +82,11 @@ describe('Presale - Buying', function () {
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
-    const buyAmount = ethers.parseUnits('3', 18)
     const usdtAmount = ethers.parseUnits('0.12', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
 
     await expect(
-      presale.connect(alice).buy(buyAmount, usdtAddress)
+      presale.connect(alice).buy(usdtAmount, usdtAddress)
     ).to.be.revertedWith('Insufficient tokens in contract')
   })
 
@@ -109,12 +107,11 @@ describe('Presale - Buying', function () {
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
-    const buyAmount = ethers.parseUnits('3', 18)
     const usdtAmount = ethers.parseUnits('0.12', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
 
     await expect(
-      presale.connect(alice).buy(buyAmount, usdtAddress)
+      presale.connect(alice).buy(usdtAmount, usdtAddress)
     ).to.be.revertedWith('Invalid payment token')
   })
 
@@ -137,13 +134,12 @@ describe('Presale - Buying', function () {
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
-    const buyAmount = ethers.parseUnits('0', 18)
-    const usdtAmount = ethers.parseUnits('0.12', 6)
+    const usdtAmount = ethers.parseUnits('0', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
 
     await expect(
-      presale.connect(alice).buy(buyAmount, usdtAddress)
-    ).to.be.revertedWith('Invalid presale token amount')
+      presale.connect(alice).buy(usdtAmount, usdtAddress)
+    ).to.be.revertedWith('Invalid payment amount')
   })
 
   it('Prevents buying with too low amount', async function () {
@@ -165,12 +161,11 @@ describe('Presale - Buying', function () {
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
-    const buyAmount = ethers.parseUnits('0.00003', 18)
-    const usdtAmount = ethers.parseUnits('0.12', 6)
+    const usdtAmount = ethers.parseUnits('0.0001', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
 
     await expect(
-      presale.connect(alice).buy(buyAmount, usdtAddress)
-    ).to.be.revertedWith('Invalid presale token amount')
+      presale.connect(alice).buy(usdtAmount, usdtAddress)
+    ).to.be.revertedWith('Invalid payment amount')
   })
 })

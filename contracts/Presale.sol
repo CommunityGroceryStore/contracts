@@ -8,7 +8,7 @@ import {
 
 contract CGSTokenPresale is AccessControlEnumerable {
   bytes32 public constant PRESALE_ADMIN_ROLE = keccak256("PRESALE_ADMIN_ROLE");
-  uint256 public constant MINIMUM_PRESALE_PURCHASE = 1e18; // 1 presale token
+  uint256 public constant MINIMUM_PRESALE_PURCHASE = 1e5; // $0.01 USDT/USDC
 
   bool public isPresalePaused = true;
   address public treasuryAddress;
@@ -89,25 +89,26 @@ contract CGSTokenPresale is AccessControlEnumerable {
     delete paymentTokens[_token];
   }
 
-  function buy(uint256 _presaleTokenAmount, address _paymentToken) external {
+  function buy(uint256 _paymentTokenAtomicAmount, address _paymentToken) external {
     require(!isPresalePaused, "Presale is paused");
     require(paymentTokens[_paymentToken].tokenAddress != address(0), "Invalid payment token");
-    require(_presaleTokenAmount >= MINIMUM_PRESALE_PURCHASE, "Invalid presale token amount");
+    require(_paymentTokenAtomicAmount >= MINIMUM_PRESALE_PURCHASE, "Invalid payment amount");
     
     IERC20 paymentToken = IERC20(paymentTokens[_paymentToken].tokenAddress);
     uint256 rate = paymentTokens[_paymentToken].rate;
-    uint256 paymentAmount = (_presaleTokenAmount * rate) / 1e18; // Presale token has 18 decimals
+
+    uint256 presaleTokenAmount = (_paymentTokenAtomicAmount / rate) * 1e18;
     
     // Check if enough tokens are available
-    require(presaleToken.balanceOf(address(this)) >= _presaleTokenAmount, "Insufficient tokens in contract");
+    require(presaleToken.balanceOf(address(this)) >= presaleTokenAmount, "Insufficient tokens in contract");
     
     // Transfer payment from buyer to treasury
-    require(paymentToken.transferFrom(msg.sender, treasuryAddress, paymentAmount), "Payment transfer failed");
+    require(paymentToken.transferFrom(msg.sender, treasuryAddress, _paymentTokenAtomicAmount), "Payment transfer failed");
     
     // Transfer tokens to buyer
-    require(presaleToken.transfer(msg.sender, _presaleTokenAmount), "Token transfer failed");
+    require(presaleToken.transfer(msg.sender, presaleTokenAmount), "Token transfer failed");
     
-    presaleTokensSold += _presaleTokenAmount;
-    emit TokensPurchased(msg.sender, _presaleTokenAmount, _paymentToken, paymentAmount, rate);
+    presaleTokensSold += presaleTokenAmount;
+    emit TokensPurchased(msg.sender, presaleTokenAmount, _paymentToken, _paymentTokenAtomicAmount, rate);
   }
 }
