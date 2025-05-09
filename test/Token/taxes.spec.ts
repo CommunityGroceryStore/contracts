@@ -560,13 +560,11 @@ describe('Token - Taxes', function () {
       await expect(
         token.connect(owner).setTreasuryAddress(BURN_ADDRESS_0XDEAD)
       ).to.be.revertedWithCustomError(token, 'InvalidTreasuryAddress')
-        .withArgs(BURN_ADDRESS_0XDEAD)
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
 
       await expect(
         token.connect(owner).setTreasuryAddress(BURN_ADDRESS_0X0)
       ).to.be.revertedWithCustomError(token, 'InvalidTreasuryAddress')
-        .withArgs(BURN_ADDRESS_0X0)
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
     })
   })

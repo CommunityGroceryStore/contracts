@@ -42,9 +42,27 @@ contract CGSVesting is AccessControlEnumerable {
 
   error VestingInvalidAmount();
   error VestingInvalidStartTime();
-  error VestingTokenTransferFailed();
+  error VestingTokenTransferFailed(
+    address beneficiary,
+    uint256 amount
+  );
   error VestingNoSchedule();
   error VestingNoTokensToClaim();
+  error InvalidTreasuryAddress();
+  error InvalidBeneficiaryAddress();
+  error VestingCliffExceedsDuration(
+    uint256 cliff,
+    uint256 duration
+  );
+  error ClaimAmountExceedsTotalAmount(
+    address beneficiary,
+    uint256 claimedAmount,
+    uint256 totalAmount
+  );
+  error ClaimTokenTransferFailed(
+    address beneficiary,
+    uint256 claimableAmount
+  );
 
   constructor(address newOwner, address tokenAddress) {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
@@ -70,52 +88,52 @@ contract CGSVesting is AccessControlEnumerable {
   function setTreasuryAddress(
     address newTreasuryAddress
   ) public onlyRole(VESTING_ADMIN_ROLE) {
-    require(newTreasuryAddress != address(0), "Invalid treasury address");
-    require(newTreasuryAddress != address(0xdead), "Invalid treasury address");
+    require(newTreasuryAddress != address(0), InvalidTreasuryAddress());
+    require(newTreasuryAddress != address(0xdead), InvalidTreasuryAddress());
     treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
   }
 
   function addVestingSchedule(
-    address _beneficiary,
-    uint256 _amount,
-    uint256 _vestingStart,
-    uint256 _vestingDuration,
-    uint256 _vestingCliff
+    address beneficiary,
+    uint256 amount,
+    uint256 vestingStart,
+    uint256 vestingDuration,
+    uint256 vestingCliff
   ) external onlyRole(VESTING_ADMIN_ROLE) returns (bool) {
-    require(_beneficiary != address(0), "Invalid beneficiary address");
-    require(_amount > 0, VestingInvalidAmount());
-    require(_vestingCliff <= _vestingDuration, "Cliff cannot exceed duration");
-    require(_vestingStart >= block.timestamp, VestingInvalidStartTime());
+    require(beneficiary != address(0), InvalidBeneficiaryAddress());
+    require(beneficiary != address(0xdead), InvalidBeneficiaryAddress());
+    require(amount > 0, VestingInvalidAmount());
     require(
-      vestingToken.transferFrom(
-        msg.sender,
-        address(this),
-        _amount
-      ),
-      VestingTokenTransferFailed()
+      vestingCliff <= vestingDuration,
+      VestingCliffExceedsDuration(vestingCliff, vestingDuration)
+    );
+    require(vestingStart >= block.timestamp, VestingInvalidStartTime());
+    require(
+      vestingToken.transferFrom(msg.sender, address(this), amount),
+      VestingTokenTransferFailed(msg.sender, amount)
     );
 
-    VestingSchedule storage schedule = vestingSchedules[_beneficiary];
+    VestingSchedule storage schedule = vestingSchedules[beneficiary];
     if (!schedule.initialized) {
-      vestingSchedules[_beneficiary] = VestingSchedule({
-        totalAmount: _amount,
+      vestingSchedules[beneficiary] = VestingSchedule({
+        totalAmount: amount,
         claimedAmount: 0,
-        vestingStart: _vestingStart,
-        vestingDuration: _vestingDuration,
-        vestingCliff: _vestingCliff,
+        vestingStart: vestingStart,
+        vestingDuration: vestingDuration,
+        vestingCliff: vestingCliff,
         initialized: true
       });
     } else {
-      schedule.totalAmount = schedule.totalAmount + _amount;
+      schedule.totalAmount = schedule.totalAmount + amount;
     }
 
     emit VestingScheduleCreated(
-      _beneficiary,
-      _amount,
-      _vestingStart,
-      _vestingDuration,
-      _vestingCliff
+      beneficiary,
+      amount,
+      vestingStart,
+      vestingDuration,
+      vestingCliff
     );
 
     return true;
@@ -153,11 +171,18 @@ contract CGSVesting is AccessControlEnumerable {
     schedule.claimedAmount = schedule.claimedAmount + claimableAmount;
     require(
       schedule.claimedAmount <= schedule.totalAmount,
-      "Claimed amount exceeds total amount"
+      ClaimAmountExceedsTotalAmount(
+        msg.sender,
+        schedule.claimedAmount,
+        schedule.totalAmount
+      )
     );
     require(
       vestingToken.transfer(msg.sender, claimableAmount),
-      "Token transfer failed"
+      ClaimTokenTransferFailed(
+        msg.sender,
+        claimableAmount
+      )
     );
 
     emit TokensClaimed(msg.sender, claimableAmount);

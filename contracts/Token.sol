@@ -33,7 +33,7 @@ contract CGSToken is ERC20, AccessControlEnumerable {
 
   error ErrorTaxPermanentlyDisabled();
   error TaxRateCannotExceedMaxTaxRate(uint256 newTaxRate, uint256 maxTaxRate);
-  error InvalidTreasuryAddress(address newTreasuryAddress);
+  error InvalidTreasuryAddress();
 
   constructor(
     address newOwner,
@@ -138,14 +138,8 @@ contract CGSToken is ERC20, AccessControlEnumerable {
   function setTreasuryAddress(
     address newTreasuryAddress
   ) public onlyRole(TOKEN_ADMIN_ROLE) {
-    require(
-      newTreasuryAddress != address(0),
-      InvalidTreasuryAddress(newTreasuryAddress)
-    );
-    require(
-      newTreasuryAddress != address(0xdead),
-      InvalidTreasuryAddress(newTreasuryAddress)
-    );
+    require(newTreasuryAddress != address(0), InvalidTreasuryAddress());
+    require(newTreasuryAddress != address(0xdead), InvalidTreasuryAddress());
     treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
   }

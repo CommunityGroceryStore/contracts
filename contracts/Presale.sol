@@ -159,10 +159,8 @@ contract CGSTokenPresale is AccessControlEnumerable {
   function setTreasuryAddress(
     address newTreasuryAddress
   ) public onlyRole(PRESALE_ADMIN_ROLE) {
-    require(
-      newTreasuryAddress != address(0),
-      InvalidTreasuryAddress()
-    );
+    require(newTreasuryAddress != address(0), InvalidTreasuryAddress());
+    require(newTreasuryAddress != address(0xdead), InvalidTreasuryAddress());
     treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
   }

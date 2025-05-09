@@ -28,7 +28,15 @@ describe('Vesting - Token Vesting', function () {
         vestingAddress,
         vestingSchedule.amount
       )
-      await vesting.connect(owner).addVestingSchedule(
+      await expect(
+        vesting.connect(owner).addVestingSchedule(
+          alice.address,
+          vestingSchedule.amount,
+          vestingSchedule.startTime,
+          vestingSchedule.duration,
+          vestingSchedule.cliff
+        )
+      ).to.emit(vesting, 'VestingScheduleCreated').withArgs(
         alice.address,
         vestingSchedule.amount,
         vestingSchedule.startTime,
@@ -154,6 +162,41 @@ describe('Vesting - Token Vesting', function () {
       ).to.be.revertedWithCustomError(
         token,
         'ERC20InsufficientBalance'
+      )
+    })
+
+    it('Prevents adding vesting schedules with cliff greater than duration', async function () {
+      const {
+        vesting,
+        alice,
+        token,
+        owner
+      } = await loadFixture(deployVestingContract)
+      const vestingSchedule = {
+        amount: ethers.parseUnits('1000', 18),
+        startTime: Math.floor(Date.now() / 1000) + 60, // 1 minute from now
+        duration: 3600, // 1 hour
+        cliff: 4000 // 2 minutes from now
+      }
+      const vestingAddress = await vesting.getAddress()
+      await token.connect(owner).approve(
+        vestingAddress,
+        vestingSchedule.amount
+      )
+      await expect(
+        vesting.connect(owner).addVestingSchedule(
+          alice.address,
+          vestingSchedule.amount,
+          vestingSchedule.startTime,
+          vestingSchedule.duration,
+          vestingSchedule.cliff
+        )
+      ).to.be.revertedWithCustomError(
+        vesting,
+        'VestingCliffExceedsDuration'
+      ).withArgs(
+        vestingSchedule.cliff,
+        vestingSchedule.duration
       )
     })
   })
@@ -576,7 +619,15 @@ describe('Vesting - Token Vesting', function () {
         vestingSchedule.duration,
         vestingSchedule.cliff
       )
-      await vesting.connect(owner).addVestingSchedule(
+      await expect(
+        vesting.connect(owner).addVestingSchedule(
+          alice.address,
+          vestingSchedule.amount,
+          vestingSchedule.startTime,
+          vestingSchedule.duration,
+          vestingSchedule.cliff
+        )
+      ).to.emit(vesting, 'VestingScheduleCreated').withArgs(
         alice.address,
         vestingSchedule.amount,
         vestingSchedule.startTime,

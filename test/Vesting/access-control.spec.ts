@@ -26,7 +26,10 @@ describe('Vesting - Access Control', function () {
 
     await expect(
       vesting.connect(alice).grantRole(await vesting.VESTING_ADMIN_ROLE(), alice.address)
-    ).to.be.reverted
+    ).to.be.revertedWithCustomError(
+      vesting,
+      'AccessControlUnauthorizedAccount'
+    )
   })
 
   it('Allows owner to remove Vesting Admins', async function () {
@@ -61,6 +64,9 @@ describe('Vesting - Access Control', function () {
 
     await expect(
       vesting.connect(bob).revokeRole(tokenAdminRole, alice.address)
-    ).to.be.reverted
+    ).to.be.revertedWithCustomError(
+      vesting,
+      'AccessControlUnauthorizedAccount'
+    )
   })
 })
