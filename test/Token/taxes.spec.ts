@@ -99,7 +99,9 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
       expect(await token.isExemptFromTax(alice.address)).to.equal(false)
 
-      await token.connect(owner).addTaxExemption(alice.address)
+      await expect(
+        token.connect(owner).addTaxExemption(alice.address)
+      ).to.emit(token, 'TaxExemptionAdded').withArgs(alice.address)
       expect(await token.isExemptFromTax(alice.address)).to.equal(true)
 
       const filter = token.filters.TaxExemptionAdded
@@ -136,7 +138,9 @@ describe('Token - Taxes', function () {
       await token.connect(owner).addTaxExemption(alice.address)
       expect(await token.isExemptFromTax(alice.address)).to.equal(true)
 
-      await token.connect(owner).removeTaxExemption(alice.address)
+      await expect(
+        token.connect(owner).removeTaxExemption(alice.address)
+      ).to.emit(token, 'TaxExemptionRemoved').withArgs(alice.address)
       expect(await token.isExemptFromTax(alice.address)).to.equal(false)
 
       const filter = token.filters.TaxExemptionRemoved
@@ -162,7 +166,10 @@ describe('Token - Taxes', function () {
 
       await expect(
         token.connect(alice).removeTaxExemption(alice.address)
-      ).to.be.reverted
+      ).to.be.revertedWithCustomError(
+        token,
+        'AccessControlUnauthorizedAccount'
+      )
       expect(await token.isExemptFromTax(alice.address)).to.equal(true)
     })
   })
@@ -176,7 +183,9 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(false)
-      await token.connect(owner).addLiquidityProvider(liquidityProviderA.address)
+      await expect(
+        token.connect(owner).addLiquidityProvider(liquidityProviderA.address)
+      ).to.emit(token, 'LiquidityProviderAdded').withArgs(liquidityProviderA.address)
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(true)
 
       const filter = token.filters.LiquidityProviderAdded
@@ -200,7 +209,10 @@ describe('Token - Taxes', function () {
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(false)
       await expect(
         token.connect(alice).addLiquidityProvider(liquidityProviderA.address)
-      ).to.be.reverted
+      ).to.be.revertedWithCustomError(
+        token,
+        'AccessControlUnauthorizedAccount'
+      )
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(false)
     })
 
@@ -215,7 +227,9 @@ describe('Token - Taxes', function () {
       await token.connect(owner).addLiquidityProvider(liquidityProviderA.address)
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(true)
 
-      await token.connect(owner).removeLiquidityProvider(liquidityProviderA.address)
+      await expect(
+        token.connect(owner).removeLiquidityProvider(liquidityProviderA.address)
+      ).to.emit(token, 'LiquidityProviderRemoved').withArgs(liquidityProviderA.address)
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(false)
 
       const filter = token.filters.LiquidityProviderRemoved
@@ -242,7 +256,10 @@ describe('Token - Taxes', function () {
 
       await expect(
         token.connect(alice).removeLiquidityProvider(liquidityProviderA.address)
-      ).to.be.reverted
+      ).to.be.revertedWithCustomError(
+        token,
+        'AccessControlUnauthorizedAccount'
+      )
       expect(await token.liquidityProviders(liquidityProviderA.address)).to.equal(true)
     })
   })
@@ -255,7 +272,7 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.isTaxPaused()).to.equal(false)
-      await token.connect(owner).pauseTax()
+      await expect(token.connect(owner).pauseTax()).to.emit(token, 'TaxPaused')
       expect(await token.isTaxPaused()).to.equal(true)
       const filter = token.filters.TaxPaused
       const events = await token.queryFilter(filter)
@@ -272,7 +289,8 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.isTaxPaused()).to.equal(false)
-      await expect(token.connect(alice).pauseTax()).to.be.reverted
+      await expect(token.connect(alice).pauseTax())
+        .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
       expect(await token.isTaxPaused()).to.equal(false)
     })
 
@@ -286,7 +304,9 @@ describe('Token - Taxes', function () {
       await token.connect(owner).pauseTax()
       expect(await token.isTaxPaused()).to.equal(true)
 
-      await token.connect(owner).unpauseTax()
+      await expect(
+        token.connect(owner).unpauseTax()
+      ).to.emit(token, 'TaxUnpaused')
       expect(await token.isTaxPaused()).to.equal(false)
       const filter = token.filters.TaxUnpaused
       const events = await token.queryFilter(filter)
@@ -307,7 +327,8 @@ describe('Token - Taxes', function () {
       await token.connect(owner).pauseTax()
       expect(await token.isTaxPaused()).to.equal(true)
 
-      await expect(token.connect(alice).unpauseTax()).to.be.reverted
+      await expect(token.connect(alice).unpauseTax())
+        .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
       expect(await token.isTaxPaused()).to.equal(true)
     })
 
@@ -318,7 +339,9 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.isTaxPermanentlyDisabled()).to.equal(false)
-      await token.connect(owner).permanentlyDisableTax()
+      await expect(
+        token.connect(owner).permanentlyDisableTax()
+      ).to.emit(token, 'TaxPermanentlyDisabled')
       expect(await token.isTaxPermanentlyDisabled()).to.equal(true)
       const filter = token.filters.TaxPermanentlyDisabled
       const events = await token.queryFilter(filter)
@@ -337,7 +360,7 @@ describe('Token - Taxes', function () {
       expect(await token.isTaxPermanentlyDisabled()).to.equal(false)
       await expect(
         token.connect(alice).permanentlyDisableTax()
-      ).to.be.reverted
+      ).to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
       expect(await token.isTaxPermanentlyDisabled()).to.equal(false)
     })
   })
@@ -350,7 +373,9 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.taxBuyRate()).to.equal(1_000)
-      await token.connect(owner).setBuyTaxRate(5_000)
+      await expect(
+        token.connect(owner).setBuyTaxRate(5_000)
+      ).to.emit(token, 'TaxBuyRateSet').withArgs(5_000)
       expect(await token.taxBuyRate()).to.equal(5_000)
       const filter = token.filters.TaxBuyRateSet
       const events = await token.queryFilter(filter)
@@ -370,7 +395,8 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
       
       expect(await token.taxBuyRate()).to.equal(1_000)
-      await expect(token.connect(alice).setBuyTaxRate(5_000)).to.be.reverted
+      await expect(token.connect(alice).setBuyTaxRate(5_000))
+        .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
       expect(await token.taxBuyRate()).to.equal(1_000)
     })
 
@@ -384,7 +410,7 @@ describe('Token - Taxes', function () {
       await token.connect(owner).permanentlyDisableTax()
       expect(await token.taxBuyRate()).to.equal(1_000)
       await expect(token.connect(owner).setBuyTaxRate(5_000))
-        .to.be.revertedWith('Tax is permanently disabled')
+        .to.be.revertedWithCustomError(token, 'ErrorTaxPermanentlyDisabled')
       expect(await token.taxBuyRate()).to.equal(1_000)
     })
 
@@ -395,7 +421,9 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.taxSellRate()).to.equal(1_000)
-      await token.connect(owner).setSellTaxRate(5_000)
+      await expect(
+        token.connect(owner).setSellTaxRate(5_000)
+      ).to.emit(token, 'TaxSellRateSet').withArgs(5_000)
       expect(await token.taxSellRate()).to.equal(5_000)
       const filter = token.filters.TaxSellRateSet
       const events = await token.queryFilter(filter)
@@ -415,7 +443,8 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.taxSellRate()).to.equal(1_000)
-      await expect(token.connect(alice).setSellTaxRate(5_000)).to.be.reverted
+      await expect(token.connect(alice).setSellTaxRate(5_000))
+        .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
       expect(await token.taxSellRate()).to.equal(1_000)
     })
 
@@ -429,7 +458,7 @@ describe('Token - Taxes', function () {
       await token.connect(owner).permanentlyDisableTax()
       expect(await token.taxSellRate()).to.equal(1_000)
       await expect(token.connect(owner).setSellTaxRate(5_000))
-        .to.be.revertedWith('Tax is permanently disabled')
+        .to.be.revertedWithCustomError(token, 'ErrorTaxPermanentlyDisabled')
       expect(await token.taxSellRate()).to.equal(1_000)
     })
 
@@ -452,7 +481,8 @@ describe('Token - Taxes', function () {
 
       expect(await token.taxBuyRate()).to.equal(1_000)
       await expect(token.connect(owner).setBuyTaxRate(21_000))
-        .to.be.revertedWith('Tax rate cannot exceed MAX_TAX_RATE')
+        .to.be.revertedWithCustomError(token, 'TaxRateCannotExceedMaxTaxRate')
+        .withArgs(21_000, 20_000)
       expect(await token.taxBuyRate()).to.equal(1_000)
     })
 
@@ -475,7 +505,8 @@ describe('Token - Taxes', function () {
 
       expect(await token.taxSellRate()).to.equal(1_000)
       await expect(token.connect(owner).setSellTaxRate(21_000))
-        .to.be.revertedWith('Tax rate cannot exceed MAX_TAX_RATE')
+        .to.be.revertedWithCustomError(token, 'TaxRateCannotExceedMaxTaxRate')
+        .withArgs(21_000, 20_000)
       expect(await token.taxSellRate()).to.equal(1_000)
     })
   })
@@ -489,7 +520,9 @@ describe('Token - Taxes', function () {
       } = await loadFixture(deployTokenContract)
 
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
-      await token.connect(owner).setTreasuryAddress(alice.address)
+      await expect(
+        token.connect(owner).setTreasuryAddress(alice.address)
+      ).to.emit(token, 'TreasuryAddressSet').withArgs(alice.address)
       expect(await token.getTreasuryAddress()).to.equal(alice.address)
 
       const filter = token.filters.TreasuryAddressSet
@@ -512,7 +545,7 @@ describe('Token - Taxes', function () {
 
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
       await expect(token.connect(alice).setTreasuryAddress(alice.address))
-        .to.be.reverted
+        .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
     })
 
@@ -526,12 +559,14 @@ describe('Token - Taxes', function () {
 
       await expect(
         token.connect(owner).setTreasuryAddress(BURN_ADDRESS_0XDEAD)
-      ).to.be.revertedWith('Invalid treasury address')
+      ).to.be.revertedWithCustomError(token, 'InvalidTreasuryAddress')
+        .withArgs(BURN_ADDRESS_0XDEAD)
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
 
       await expect(
         token.connect(owner).setTreasuryAddress(BURN_ADDRESS_0X0)
-      ).to.be.revertedWith('Invalid treasury address')
+      ).to.be.revertedWithCustomError(token, 'InvalidTreasuryAddress')
+        .withArgs(BURN_ADDRESS_0X0)
       expect(await token.getTreasuryAddress()).to.equal(owner.address)
     })
   })

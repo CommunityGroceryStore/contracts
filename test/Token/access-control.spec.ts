@@ -26,7 +26,10 @@ describe('Token - Access Control', function () {
 
     await expect(
       token.connect(alice).grantRole(await token.TOKEN_ADMIN_ROLE(), alice.address)
-    ).to.be.reverted
+    ).to.be.revertedWithCustomError(
+      token,
+      'AccessControlUnauthorizedAccount'
+    )
   })
 
   it('Allows owner to remove Token Admins', async function () {
@@ -61,6 +64,9 @@ describe('Token - Access Control', function () {
 
     await expect(
       token.connect(bob).revokeRole(tokenAdminRole, alice.address)
-    ).to.be.reverted
+    ).to.be.revertedWithCustomError(
+      token,
+      'AccessControlUnauthorizedAccount'
+    )
   })
 })

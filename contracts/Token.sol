@@ -31,18 +31,23 @@ contract CGSToken is ERC20, AccessControlEnumerable {
   event LiquidityProviderRemoved(address indexed provider);
   event TreasuryAddressSet(address treasuryAddress);
 
+  error ErrorTaxPermanentlyDisabled();
+  error TaxRateCannotExceedMaxTaxRate(uint256 newTaxRate, uint256 maxTaxRate);
+  error InvalidTreasuryAddress(address newTreasuryAddress);
+
   constructor(
     address newOwner,
-    uint256 initialSupply
+    uint256 totalSupply
   ) payable ERC20("Community Grocery Store", "CGS") {
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     _grantRole(TOKEN_ADMIN_ROLE, msg.sender);
     _grantRole(TOKEN_ADMIN_ROLE, newOwner);
 
-    _mint(newOwner, initialSupply);
+    _mint(newOwner, totalSupply);
 
     setTreasuryAddress(newOwner);
+
     addTaxExemption(newOwner);
     addTaxExemption(address(this));
     addTaxExemption(address(0xdead));
@@ -85,10 +90,13 @@ contract CGSToken is ERC20, AccessControlEnumerable {
   function setBuyTaxRate(
     uint256 newTaxBuyRate
   ) public onlyRole(TOKEN_ADMIN_ROLE) {
-    require(!isTaxPermanentlyDisabled, "Tax is permanently disabled");
+    require(!isTaxPermanentlyDisabled, ErrorTaxPermanentlyDisabled());
     require(
       newTaxBuyRate <= MAX_TAX_RATE,
-      "Tax rate cannot exceed MAX_TAX_RATE"
+      TaxRateCannotExceedMaxTaxRate(
+        newTaxBuyRate,
+        MAX_TAX_RATE
+      )
     );
     taxBuyRate = newTaxBuyRate;
     emit TaxBuyRateSet(taxBuyRate);
@@ -97,10 +105,13 @@ contract CGSToken is ERC20, AccessControlEnumerable {
   function setSellTaxRate(
     uint256 newTaxSellRate
   ) public onlyRole(TOKEN_ADMIN_ROLE) {
-    require(!isTaxPermanentlyDisabled, "Tax is permanently disabled");
+    require(!isTaxPermanentlyDisabled, ErrorTaxPermanentlyDisabled());
     require(
       newTaxSellRate <= MAX_TAX_RATE,
-      "Tax rate cannot exceed MAX_TAX_RATE"
+      TaxRateCannotExceedMaxTaxRate(
+        newTaxSellRate,
+        MAX_TAX_RATE
+      )
     );
     taxSellRate = newTaxSellRate;
     emit TaxSellRateSet(taxSellRate);
@@ -116,7 +127,7 @@ contract CGSToken is ERC20, AccessControlEnumerable {
   function removeLiquidityProvider(
     address provider
   ) public onlyRole(TOKEN_ADMIN_ROLE) {
-    liquidityProviders[provider] = false;
+    delete liquidityProviders[provider];
     emit LiquidityProviderRemoved(provider);
   }
 
@@ -127,8 +138,14 @@ contract CGSToken is ERC20, AccessControlEnumerable {
   function setTreasuryAddress(
     address newTreasuryAddress
   ) public onlyRole(TOKEN_ADMIN_ROLE) {
-    require(newTreasuryAddress != address(0), "Invalid treasury address");
-    require(newTreasuryAddress != address(0xdead), "Invalid treasury address");
+    require(
+      newTreasuryAddress != address(0),
+      InvalidTreasuryAddress(newTreasuryAddress)
+    );
+    require(
+      newTreasuryAddress != address(0xdead),
+      InvalidTreasuryAddress(newTreasuryAddress)
+    );
     treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
   }

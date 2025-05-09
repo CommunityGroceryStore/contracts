@@ -47,7 +47,8 @@ describe('Token - Withdraw Utility', function () {
     expect(contractBalance).to.equal(hre.ethers.parseEther('1.0'))
 
     // Attempt to withdraw ETH as a non-owner
-    await expect(token.connect(alice).withdrawETH()).to.be.reverted
+    await expect(token.connect(alice).withdrawETH())
+      .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
   })
 
   it('Allows Token Admins to withdraw ERC20', async function () {
@@ -84,6 +85,7 @@ describe('Token - Withdraw Utility', function () {
     expect(contractBalance).to.equal(1_000)
 
     // Attempt to withdraw ERC20 tokens as a non-owner
-    await expect(token.connect(alice).withdrawERC20(tokenAddress)).to.be.reverted
+    await expect(token.connect(alice).withdrawERC20(tokenAddress))
+      .to.be.revertedWithCustomError(token, 'AccessControlUnauthorizedAccount')
   })
 })
