@@ -46,6 +46,11 @@ describe('Presale - Withdraw Utility', function () {
     expect(contractBalance).to.equal(1_000)
 
     // Attempt to withdraw ERC20 tokens as a non-owner
-    await expect(token.connect(alice).withdrawERC20(tokenAddress)).to.be.reverted
+    await expect(
+      token.connect(alice).withdrawERC20(tokenAddress)
+    ).to.be.revertedWithCustomError(
+      presale,
+      'AccessControlUnauthorizedAccount'
+    )
   })
 })

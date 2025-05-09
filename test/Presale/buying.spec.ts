@@ -28,9 +28,6 @@ describe('Presale - Buying', function () {
 
     await presale.connect(owner).setTreasuryAddress(treasury.address)
     await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
-    expect(
-      (await presale.paymentTokens(usdtAddress)).paymentTokenAddress
-    ).to.equal(usdtAddress)
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
@@ -38,6 +35,13 @@ describe('Presale - Buying', function () {
     const usdtAmount = ethers.parseUnits('0.12', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
     const buyTx = await presale.connect(alice).buy(usdtAmount, usdtAddress)
+    expect(buyTx).to.emit(presale, 'TokensPurchased').withArgs(
+      alice.address,
+      buyAmount,
+      usdtAddress,
+      usdtAmount,
+      40_000
+    )
     const buyBlock = await buyTx.getBlock()
 
     expect(
@@ -72,7 +76,6 @@ describe('Presale - Buying', function () {
     await token.connect(owner).transfer(presaleAddress, ethers.parseUnits('1000', 18))
 
     await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
-    expect((await presale.paymentTokens(usdtAddress)).paymentTokenAddress).to.equal(usdtAddress)
     await presale.connect(owner).pausePresale()
     expect(await presale.isPresalePaused()).to.be.true
 
@@ -81,7 +84,7 @@ describe('Presale - Buying', function () {
 
     await expect(
       presale.connect(alice).buy(usdtAmount, usdtAddress)
-    ).to.be.revertedWith('Presale is paused')
+    ).to.be.revertedWithCustomError(presale, 'PresaleIsPaused')
   })
 
   it('Prevents buying when presale does not have enough tokens', async function () {
@@ -99,7 +102,6 @@ describe('Presale - Buying', function () {
     await token.connect(owner).transfer(presaleAddress, ethers.parseUnits('1', 18))
 
     await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
-    expect((await presale.paymentTokens(usdtAddress)).paymentTokenAddress).to.equal(usdtAddress)
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
@@ -108,7 +110,13 @@ describe('Presale - Buying', function () {
 
     await expect(
       presale.connect(alice).buy(usdtAmount, usdtAddress)
-    ).to.be.revertedWith('Insufficient tokens in contract')
+    ).to.be.revertedWithCustomError(
+      presale,
+      'AvailableTokensLessThanRequestedPurchaseAmount'
+    ).withArgs(
+      ethers.parseUnits('1', 18),
+      ethers.parseUnits('3', 18)
+    )
   })
 
   it('Prevents buying with unknown purchase token', async function () {
@@ -131,9 +139,11 @@ describe('Presale - Buying', function () {
     const usdtAmount = ethers.parseUnits('0.12', 6)
     await usdt.connect(alice).approve(presaleAddress, usdtAmount)
 
-    await expect(
-      presale.connect(alice).buy(usdtAmount, usdtAddress)
-    ).to.be.revertedWith('Invalid payment token')
+    await expect(presale.connect(alice).buy(usdtAmount, usdtAddress))
+      .to.be.revertedWithCustomError(presale, 'InvalidPaymentToken')
+      .withArgs(
+        usdtAddress
+      )
   })
 
   it('Prevents buying with zero amount', async function () {
@@ -151,7 +161,6 @@ describe('Presale - Buying', function () {
     await token.connect(owner).transfer(presaleAddress, ethers.parseUnits('1000', 18))
 
     await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
-    expect((await presale.paymentTokens(usdtAddress)).paymentTokenAddress).to.equal(usdtAddress)
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
@@ -160,7 +169,13 @@ describe('Presale - Buying', function () {
 
     await expect(
       presale.connect(alice).buy(usdtAmount, usdtAddress)
-    ).to.be.revertedWith('Invalid payment amount')
+    ).to.be.revertedWithCustomError(
+      presale,
+      'PaymentAmountLessThanMinimum'
+    ).withArgs(
+      ethers.parseUnits('0', 6),
+      ethers.parseUnits('0.01', 6)
+    )
   })
 
   it('Prevents buying with too low amount', async function () {
@@ -178,7 +193,6 @@ describe('Presale - Buying', function () {
     await token.connect(owner).transfer(presaleAddress, ethers.parseUnits('1000', 18))
 
     await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
-    expect((await presale.paymentTokens(usdtAddress)).paymentTokenAddress).to.equal(usdtAddress)
     await presale.connect(owner).unpausePresale()
     expect(await presale.isPresalePaused()).to.be.false
 
@@ -187,6 +201,12 @@ describe('Presale - Buying', function () {
 
     await expect(
       presale.connect(alice).buy(usdtAmount, usdtAddress)
-    ).to.be.revertedWith('Invalid payment amount')
+    ).to.be.revertedWithCustomError(
+      presale,
+      'PaymentAmountLessThanMinimum'
+    ).withArgs(
+      ethers.parseUnits('0.001', 6),
+      ethers.parseUnits('0.01', 6)
+    )
   })
 })

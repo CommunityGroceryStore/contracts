@@ -22,23 +22,18 @@ interface IVesting is IAccessControlEnumerable {
 contract CGSTokenPresale is AccessControlEnumerable {
   bytes32 public constant PRESALE_ADMIN_ROLE = keccak256("PRESALE_ADMIN_ROLE");
   bytes32 public constant VESTING_ADMIN_ROLE = keccak256("VESTING_ADMIN_ROLE");
-  uint256 public constant MINIMUM_PRESALE_PURCHASE = 1e5; // $0.01 USDT/USDC
+  uint256 public constant MINIMUM_PRESALE_PURCHASE = 1e4; // $0.01 USDT/USDC
 
   bool public isPresalePaused = true;
   address public treasuryAddress;
   address public tokenAddress;
   address public vestingContractAddress;
   IERC20 public presaleToken;
-  address public presaleTokenAddress;
   IVesting public vestingContract;
   uint256 public presaleTokensSold;
-  struct PaymentToken {
-    address paymentTokenAddress;
-    // Rate is in terms of atomic payment tokens per whole presale token
-    // e.g. 40_000 means $0.04 USDT per 1 presale token
-    uint256 paymentTokenRate;
-  }
-  mapping(address => PaymentToken) public paymentTokens;
+  // Rate is in terms of atomic payment tokens per whole presale token
+  // e.g. 40_000 means $0.04 USDT per 1 presale token
+  mapping(address => uint256) public paymentTokenRates;
 
   struct VestingSchedule {
     uint256 vestingDuration; // Presale overall vesting duration in seconds
@@ -54,46 +49,87 @@ contract CGSTokenPresale is AccessControlEnumerable {
   event PaymentTokenRemoved(address token);
   event TokensPurchased(
     address purchaser,
-    uint256 _tokenAmount,
-    address _paymentToken,
+    uint256 tokenAmount,
+    address paymentToken,
     uint256 paymentAmount,
     uint256 paymentTokenRate
   );
+  event VestingScheduleParametersSet(
+    uint256 vestingDuration,
+    uint256 vestingCliff
+  );
 
   error VestingCliffMustBeLessThanOrEqualToDuration();
+  error VestingContractAddressNotSet();
+  error PresaleContractDoesNotHaveVestingAdminRoleinVestingContract();
+  error InvalidTreasuryAddress();
+  error PresaleIsNotPaused();
+  error PresaleIsPaused();
+  error InvalidPaymentToken(address invalidPaymentTokenAddress);
+  error PaymentAmountLessThanMinimum(
+    uint256 paymentAmount,
+    uint256 minimumPaymentAmount
+  );
+  error AvailableTokensLessThanRequestedPurchaseAmount(
+    uint256 availableTokens,
+    uint256 requestedPurchaseAmount
+  );
+  error PaymentTokenTransferFailed(
+    address buyer,
+    address treasuryAddress,
+    uint256 paymentTokenAtomicAmount
+  );
+  error VestingScheduleCreationTokenApprovalFailed(
+    address buyer,
+    uint256 presaleTokenAmount,
+    address vestingContractAddress
+  );
+  error VestingScheduleCreationFailed(
+    address buyer,
+    uint256 presaleTokenAmount,
+    uint256 startTime,
+    uint256 vestingDuration,
+    uint256 vestingCliff
+  );
 
   constructor(
     address newOwner,
     address _tokenAddress,
-    uint256 _initialVestingDuration,
-    uint256 _initialVestingCliff
-  ) payable {
+    uint256 initialVestingDuration,
+    uint256 initialVestingCliff
+  ) {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     _grantRole(PRESALE_ADMIN_ROLE, newOwner);
 
     tokenAddress = _tokenAddress;
-    presaleToken = IERC20(_tokenAddress);
-    presaleTokenAddress = _tokenAddress;
+    presaleToken = IERC20(tokenAddress);
     treasuryAddress = newOwner;
-    vestingSchedule.vestingDuration = _initialVestingDuration;
-    vestingSchedule.vestingCliff = _initialVestingCliff;
+    vestingSchedule.vestingDuration = initialVestingDuration;
+    vestingSchedule.vestingCliff = initialVestingCliff;
   }
 
   function setVestingScheduleParameters(
-    uint256 _vestingDuration,
-    uint256 _vestingCliff
+    uint256 vestingDuration,
+    uint256 vestingCliff
   ) public onlyRole(PRESALE_ADMIN_ROLE) {
     require(
-      _vestingCliff <= _vestingDuration,
+      vestingCliff <= vestingDuration,
       VestingCliffMustBeLessThanOrEqualToDuration()
     );
     
-    vestingSchedule.vestingDuration = _vestingDuration;
-    vestingSchedule.vestingCliff = _vestingCliff;
+    vestingSchedule.vestingDuration = vestingDuration;
+    vestingSchedule.vestingCliff = vestingCliff;
+
+    emit VestingScheduleParametersSet(
+      vestingDuration,
+      vestingCliff
+    );
   }
 
-  function withdrawERC20(address _token) external onlyRole(PRESALE_ADMIN_ROLE) {
-    IERC20 token = IERC20(_token);
+  function withdrawERC20(
+    address withdrawTokenAddress
+  ) external onlyRole(PRESALE_ADMIN_ROLE) {
+    IERC20 token = IERC20(withdrawTokenAddress);
     uint256 balance = token.balanceOf(address(this));
     require(balance > 0, "No tokens to withdraw");
     
@@ -109,11 +145,11 @@ contract CGSTokenPresale is AccessControlEnumerable {
   function unpausePresale() public onlyRole(PRESALE_ADMIN_ROLE) {
     require(
       vestingContractAddress != address(0),
-      "Vesting contract address not set"
+      VestingContractAddressNotSet()
     );
     require(
       vestingContract.hasRole(VESTING_ADMIN_ROLE, address(this)),
-      "Presale contract must have VESTING_ADMIN_ROLE in vesting contract"
+      PresaleContractDoesNotHaveVestingAdminRoleinVestingContract()
     );
 
     isPresalePaused = false;
@@ -123,6 +159,10 @@ contract CGSTokenPresale is AccessControlEnumerable {
   function setTreasuryAddress(
     address newTreasuryAddress
   ) public onlyRole(PRESALE_ADMIN_ROLE) {
+    require(
+      newTreasuryAddress != address(0),
+      InvalidTreasuryAddress()
+    );
     treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
   }
@@ -130,52 +170,56 @@ contract CGSTokenPresale is AccessControlEnumerable {
   function setVestingContractAddress(
     address newVestingContractAddress
   ) public onlyRole(PRESALE_ADMIN_ROLE) {
+    require(isPresalePaused, PresaleIsNotPaused());
     vestingContractAddress = newVestingContractAddress;
     vestingContract = IVesting(newVestingContractAddress);
     emit VestingContractAddressSet(newVestingContractAddress);
   }
 
   function addPaymentToken(
-    address _paymentTokenAddress,
-    uint256 _rate
+    address paymentTokenAddress,
+    uint256 paymentTokenRate
   ) public onlyRole(PRESALE_ADMIN_ROLE) {    
-    paymentTokens[_paymentTokenAddress] = PaymentToken({
-      paymentTokenAddress: _paymentTokenAddress,
-      paymentTokenRate: _rate
-    });
+    paymentTokenRates[paymentTokenAddress] = paymentTokenRate;
+    emit PaymentTokenAdded(paymentTokenAddress, paymentTokenRate);
   }
 
   function removePaymentToken(
-    address _token
+    address paymentTokenAddress
   ) public onlyRole(PRESALE_ADMIN_ROLE) {    
-    delete paymentTokens[_token];
+    delete paymentTokenRates[paymentTokenAddress];
+    emit PaymentTokenRemoved(paymentTokenAddress);
   }
 
   function buy(
-    uint256 _paymentTokenAtomicAmount,
-    address _paymentToken
+    uint256 paymentTokenAtomicAmount,
+    address paymentTokenAddress
   ) external {
-    require(!isPresalePaused, "Presale is paused");
+    require(!isPresalePaused, PresaleIsPaused());
     require(
-      paymentTokens[_paymentToken].paymentTokenAddress != address(0),
-      "Invalid payment token"
+      paymentTokenRates[paymentTokenAddress] > 0,
+      InvalidPaymentToken(paymentTokenAddress)
     );
     require(
-      _paymentTokenAtomicAmount >= MINIMUM_PRESALE_PURCHASE,
-      "Invalid payment amount"
+      paymentTokenAtomicAmount >= MINIMUM_PRESALE_PURCHASE,
+      PaymentAmountLessThanMinimum(
+        paymentTokenAtomicAmount,
+        MINIMUM_PRESALE_PURCHASE
+      )
     );
     
-    IERC20 paymentToken = IERC20(
-      paymentTokens[_paymentToken].paymentTokenAddress
-    );
-    uint256 rate = paymentTokens[_paymentToken].paymentTokenRate;
+    IERC20 paymentToken = IERC20(paymentTokenAddress);
+    uint256 rate = paymentTokenRates[paymentTokenAddress];
 
-    uint256 presaleTokenAmount = (_paymentTokenAtomicAmount / rate) * 1e18;
+    uint256 presaleTokenAmount = (paymentTokenAtomicAmount / rate) * 1e18;
     
     // Check if enough tokens are available
     require(
       presaleToken.balanceOf(address(this)) >= presaleTokenAmount,
-      "Insufficient tokens in contract"
+      AvailableTokensLessThanRequestedPurchaseAmount(
+        presaleToken.balanceOf(address(this)),
+        presaleTokenAmount
+      )
     );
     
     // Transfer payment from buyer to treasury
@@ -183,15 +227,23 @@ contract CGSTokenPresale is AccessControlEnumerable {
       paymentToken.transferFrom(
         msg.sender,
         treasuryAddress,
-        _paymentTokenAtomicAmount
+        paymentTokenAtomicAmount
       ),
-      "Payment transfer failed"
+      PaymentTokenTransferFailed(
+        msg.sender,
+        treasuryAddress,
+        paymentTokenAtomicAmount
+      )
     );
 
     // Create vesting schedule in vesting contract
     require(
       presaleToken.approve(vestingContractAddress, presaleTokenAmount),
-      "Vesting schedule creation token approval failed"
+      VestingScheduleCreationTokenApprovalFailed(
+        msg.sender,
+        presaleTokenAmount,
+        vestingContractAddress
+      )
     );
     require(
       vestingContract.addVestingSchedule(
@@ -201,15 +253,21 @@ contract CGSTokenPresale is AccessControlEnumerable {
         vestingSchedule.vestingDuration,
         vestingSchedule.vestingCliff
       ),
-      "Vesting schedule creation failed"
+      VestingScheduleCreationFailed(
+        msg.sender,
+        presaleTokenAmount,
+        block.timestamp,
+        vestingSchedule.vestingDuration,
+        vestingSchedule.vestingCliff
+      )
     );
     
     presaleTokensSold += presaleTokenAmount;
     emit TokensPurchased(
       msg.sender,
       presaleTokenAmount,
-      _paymentToken,
-      _paymentTokenAtomicAmount,
+      paymentTokenAddress,
+      paymentTokenAtomicAmount,
       rate
     );
   }

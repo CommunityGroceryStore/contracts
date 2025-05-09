@@ -26,7 +26,7 @@ describe('Presale - Access Control', function () {
 
     await expect(
       presale.connect(alice).grantRole(await presale.PRESALE_ADMIN_ROLE(), alice.address)
-    ).to.be.reverted
+    ).to.be.revertedWithCustomError(presale, 'AccessControlUnauthorizedAccount')
   })
 
   it('Allows owner to remove Presale Admins', async function () {
@@ -61,6 +61,6 @@ describe('Presale - Access Control', function () {
 
     await expect(
       presale.connect(bob).revokeRole(presaleAdminRole, alice.address)
-    ).to.be.reverted
+    ).to.be.revertedWithCustomError(presale, 'AccessControlUnauthorizedAccount')
   })
 })
