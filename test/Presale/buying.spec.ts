@@ -4,7 +4,7 @@ import { ethers } from 'hardhat'
 
 import { deployPresaleContract } from './setup'
 
-describe.only('Presale - Buying', function () {
+describe('Presale - Buying', function () {
   it('Allows buying when presale is active', async function () {
     const {
       presale,

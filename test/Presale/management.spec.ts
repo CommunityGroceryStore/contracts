@@ -117,4 +117,9 @@ describe('Presale - Management', function () {
       ).to.be.reverted
     })
   })
+
+  describe('Setting Vesting Schedule', function () {
+    it('Allows Presale Admins to set vesting schedule')
+    it('Prevents others from setting vesting schedule')
+  })
 })
