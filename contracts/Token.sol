@@ -59,7 +59,9 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     emit TaxExemptionAdded(account);
   }
 
-  function removeTaxExemption(address account) public onlyRole(TOKEN_ADMIN_ROLE) {
+  function removeTaxExemption(
+    address account
+  ) public onlyRole(TOKEN_ADMIN_ROLE) {
     isExemptFromTax[account] = false;
     emit TaxExemptionRemoved(account);
   }
@@ -80,7 +82,9 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     emit TaxPermanentlyDisabled();
   }
 
-  function setBuyTaxRate(uint256 newTaxBuyRate) public onlyRole(TOKEN_ADMIN_ROLE) {
+  function setBuyTaxRate(
+    uint256 newTaxBuyRate
+  ) public onlyRole(TOKEN_ADMIN_ROLE) {
     require(!isTaxPermanentlyDisabled, "Tax is permanently disabled");
     require(
       newTaxBuyRate <= MAX_TAX_RATE,
@@ -90,7 +94,9 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     emit TaxBuyRateSet(taxBuyRate);
   }
 
-  function setSellTaxRate(uint256 newTaxSellRate) public onlyRole(TOKEN_ADMIN_ROLE) {
+  function setSellTaxRate(
+    uint256 newTaxSellRate
+  ) public onlyRole(TOKEN_ADMIN_ROLE) {
     require(!isTaxPermanentlyDisabled, "Tax is permanently disabled");
     require(
       newTaxSellRate <= MAX_TAX_RATE,
@@ -100,12 +106,16 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     emit TaxSellRateSet(taxSellRate);
   }
 
-  function addLiquidityProvider(address provider) public onlyRole(TOKEN_ADMIN_ROLE) {
+  function addLiquidityProvider(
+    address provider
+  ) public onlyRole(TOKEN_ADMIN_ROLE) {
     liquidityProviders[provider] = true;
     emit LiquidityProviderAdded(provider);
   }
 
-  function removeLiquidityProvider(address provider) public onlyRole(TOKEN_ADMIN_ROLE) {
+  function removeLiquidityProvider(
+    address provider
+  ) public onlyRole(TOKEN_ADMIN_ROLE) {
     liquidityProviders[provider] = false;
     emit LiquidityProviderRemoved(provider);
   }
@@ -114,7 +124,9 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     return treasuryAddress;
   }
 
-  function setTreasuryAddress(address newTreasuryAddress) public onlyRole(TOKEN_ADMIN_ROLE) {
+  function setTreasuryAddress(
+    address newTreasuryAddress
+  ) public onlyRole(TOKEN_ADMIN_ROLE) {
     require(newTreasuryAddress != address(0), "Invalid treasury address");
     require(newTreasuryAddress != address(0xdead), "Invalid treasury address");
     treasuryAddress = newTreasuryAddress;
@@ -129,7 +141,9 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     require(success, "ETH withdrawal failed");
   }
 
-  function withdrawERC20(address tokenAddress) external onlyRole(TOKEN_ADMIN_ROLE) {
+  function withdrawERC20(
+    address tokenAddress
+  ) external onlyRole(TOKEN_ADMIN_ROLE) {
     IERC20 token = IERC20(tokenAddress);
     uint256 balance = token.balanceOf(address(this));
     require(balance > 0, "No tokens to withdraw");

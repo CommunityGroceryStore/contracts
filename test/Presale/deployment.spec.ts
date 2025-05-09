@@ -4,20 +4,6 @@ import { expect } from 'chai'
 import { deployPresaleContract } from './setup'
 
 describe('Presale - Deployment', function () {
-  // it('Should deploy', async function () {
-  //   const {
-  //     usdt,
-  //     usdc,
-  //     token,
-  //     presale
-  //   } = await loadFixture(deployPresaleContract)
-
-  //   expect(await usdt.getAddress()).to.be.properAddress
-  //   expect(await usdc.getAddress()).to.be.properAddress
-  //   expect(await token.getAddress()).to.be.properAddress
-  //   expect(await presale.getAddress()).to.be.properAddress
-  // })
-
   it('Deploys with presale paused', async function () {
     const {
       presale
@@ -32,8 +18,12 @@ describe('Presale - Deployment', function () {
       owner
     } = await loadFixture(deployPresaleContract)
 
-    const defaultAdmins = await presale.getRoleMembers(await presale.DEFAULT_ADMIN_ROLE())
-    const presaleAdmins = await presale.getRoleMembers(await presale.PRESALE_ADMIN_ROLE())
+    const defaultAdmins = await presale.getRoleMembers(
+      await presale.DEFAULT_ADMIN_ROLE()
+    )
+    const presaleAdmins = await presale.getRoleMembers(
+      await presale.PRESALE_ADMIN_ROLE()
+    )
 
     expect(defaultAdmins).to.deep.equal([ owner.address ])
     expect(presaleAdmins).to.deep.equal([ owner.address ])
@@ -46,5 +36,17 @@ describe('Presale - Deployment', function () {
     } = await loadFixture(deployPresaleContract)
 
     expect(await presale.treasuryAddress()).to.equal(owner.address)
+  })
+
+  it('Deploys with vesting schedule parameters set', async function () {
+    const {
+      presale,
+      INITIAL_VESTING_DURATION,
+      INITIAL_VESTING_CLIFF
+    } = await loadFixture(deployPresaleContract)
+
+    const vestingSchedule = await presale.vestingSchedule()
+    expect(vestingSchedule.vestingDuration).to.equal(INITIAL_VESTING_DURATION)
+    expect(vestingSchedule.vestingCliff).to.equal(INITIAL_VESTING_CLIFF)
   })
 })

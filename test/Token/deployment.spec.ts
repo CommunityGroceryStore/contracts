@@ -45,4 +45,13 @@ describe('Token - Deployment', function () {
 
     expect(await token.totalSupply()).to.equal(totalSupplyAtomic)
   })
+
+  it('Deploys with owner as treasury address', async function () {
+    const {
+      token,
+      owner
+    } = await loadFixture(deployTokenContract)
+
+    expect(await token.treasuryAddress()).to.equal(owner.address)
+  })
 })

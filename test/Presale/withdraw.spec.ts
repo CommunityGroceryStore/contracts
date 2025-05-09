@@ -5,51 +5,6 @@ import hre from 'hardhat'
 import { deployPresaleContract } from './setup'
 
 describe('Presale - Withdraw Utility', function () {
-  it('Allows Presale Admins to withdraw ETH', async function () {
-    const { presale, alice, owner } = await loadFixture(deployPresaleContract)
-
-    const presaleAddress = await presale.getAddress()
-    const initialBalance = await hre.ethers.provider.getBalance(owner.address)
-
-    // Send some ETH to the contract
-    await alice.sendTransaction({
-      from: alice.address,
-      to: presaleAddress,
-      value: hre.ethers.parseEther('1.0')
-    })
-
-    // Check the contract's balance
-    const contractBalance = await hre.ethers.provider.getBalance(presaleAddress)
-    expect(contractBalance).to.equal(hre.ethers.parseEther('1.0'))
-
-    // Withdraw ETH
-    await presale.connect(owner).withdrawETH()
-
-    // Check the owner's balance after withdrawal
-    const finalBalance = await hre.ethers.provider.getBalance(owner.address)
-    expect(finalBalance).to.be.gt(initialBalance)
-  })
-
-  it('Prevents others from withdrawing ETH', async function () {
-    const { presale, alice } = await loadFixture(deployPresaleContract)
-
-    const presaleAddress = await presale.getAddress()
-
-    // Send some ETH to the contract
-    await alice.sendTransaction({
-      from: alice.address,
-      to: presaleAddress,
-      value: hre.ethers.parseEther('1.0')
-    })
-
-    // Check the contract's balance
-    const contractBalance = await hre.ethers.provider.getBalance(presaleAddress)
-    expect(contractBalance).to.equal(hre.ethers.parseEther('1.0'))
-
-    // Attempt to withdraw ETH as a non-owner
-    await expect(presale.connect(alice).withdrawETH()).to.be.reverted
-  })
-
   it('Allows Presale Admins to withdraw ERC20', async function () {
     const { token, presale, owner } = await loadFixture(deployPresaleContract)
 

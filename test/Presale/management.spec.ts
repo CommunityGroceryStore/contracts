@@ -2,12 +2,38 @@ import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 
-import { deployPresaleContract } from './setup'
+import {
+  deployPresaleContract,
+  deployPresaleContractWithoutVestingAddress
+} from './setup'
 
 describe('Presale - Management', function () {
   describe('Pause/Unpause', function () {
+    it('Prevents presale from starting without vesting contract address', async function () {
+      const { presale, owner } = await loadFixture(deployPresaleContractWithoutVestingAddress)
+
+      expect(await presale.isPresalePaused()).to.be.true
+      await expect(
+        presale.connect(owner).unpausePresale()
+      ).to.be.revertedWith('Vesting contract address not set')
+    })
+
+    it('Prevents presale from starting without being set as Vesting Admin on Vesting contract', async function () {
+      const { presale, owner, vesting } = await loadFixture(deployPresaleContractWithoutVestingAddress)
+      const vestingAddress = await vesting.getAddress()
+      await presale.connect(owner).setVestingContractAddress(vestingAddress)
+
+      expect(await presale.isPresalePaused()).to.be.true
+      await expect(
+        presale.connect(owner).unpausePresale()
+      ).to.be.revertedWith(
+        'Presale contract must have VESTING_ADMIN_ROLE in vesting contract'
+      )
+    })
+
     it('Allows Presale Admins to pause presale', async function () {
       const { presale, owner } = await loadFixture(deployPresaleContract)
+
       expect(await presale.isPresalePaused()).to.be.true
       await presale.connect(owner).unpausePresale()
       expect(await presale.isPresalePaused()).to.be.false
@@ -75,8 +101,8 @@ describe('Presale - Management', function () {
 
       const usdtPaymentToken = await presale.paymentTokens(usdtAddress)
       const usdcPaymentToken = await presale.paymentTokens(usdcAddress)
-      expect(usdtPaymentToken.rate).to.equal(1)
-      expect(usdcPaymentToken.rate).to.equal(2)
+      expect(usdtPaymentToken.paymentTokenRate).to.equal(1)
+      expect(usdcPaymentToken.paymentTokenRate).to.equal(2)
     })
 
     it('Prevents others from adding purchase tokens & rates', async function () {
@@ -97,15 +123,15 @@ describe('Presale - Management', function () {
       await presale.connect(owner).addPaymentToken(usdcAddress, 2)
       const usdtPaymentTokenBefore = await presale.paymentTokens(usdtAddress)
       const usdcPaymentTokenBefore = await presale.paymentTokens(usdcAddress)
-      expect(usdtPaymentTokenBefore.rate).to.equal(1)
-      expect(usdcPaymentTokenBefore.rate).to.equal(2)
+      expect(usdtPaymentTokenBefore.paymentTokenRate).to.equal(1)
+      expect(usdcPaymentTokenBefore.paymentTokenRate).to.equal(2)
 
       await presale.connect(owner).removePaymentToken(usdtAddress)
       const usdtPaymentTokenAfter = await presale.paymentTokens(usdtAddress)
       const usdcPaymentTokenAfter = await presale.paymentTokens(usdcAddress)
-      expect(usdtPaymentTokenAfter.rate).to.equal(0)
-      expect(usdtPaymentTokenAfter.tokenAddress).to.be.equal(ethers.ZeroAddress)
-      expect(usdcPaymentTokenAfter.rate).to.equal(2)
+      expect(usdtPaymentTokenAfter.paymentTokenRate).to.equal(0)
+      expect(usdtPaymentTokenAfter.paymentTokenAddress).to.be.equal(ethers.ZeroAddress)
+      expect(usdcPaymentTokenAfter.paymentTokenRate).to.equal(2)
     })
 
     it('Prevents others from removing purchase tokens & rates', async function () {
@@ -118,8 +144,55 @@ describe('Presale - Management', function () {
     })
   })
 
-  describe('Setting Vesting Schedule', function () {
-    it('Allows Presale Admins to set vesting schedule')
-    it('Prevents others from setting vesting schedule')
+  describe('Setting Presale Vesting Schedule Parameters', function () {
+    it('Allows Presale Admins to set vesting schedule parameters', async function () {
+      const { presale, owner } = await loadFixture(deployPresaleContract)
+
+      const newVestingDuration = 60 * 60 * 24 // 1 day
+      const newVestingCliff = 60 * 60 // 1 hour
+
+      await presale.connect(owner).setVestingScheduleParameters(
+        newVestingDuration,
+        newVestingCliff
+      )
+
+      const vestingSchedule = await presale.vestingSchedule()
+      expect(vestingSchedule.vestingDuration).to.equal(newVestingDuration)
+      expect(vestingSchedule.vestingCliff).to.equal(newVestingCliff)
+    })
+
+    it('Prevents others from setting vesting schedule parameters', async function () {
+      const { presale, alice } = await loadFixture(deployPresaleContract)
+
+      const newVestingDuration = 60 * 60 * 24 // 1 day
+      const newVestingCliff = 60 * 60 // 1 hour
+
+      await expect(
+        presale.connect(alice).setVestingScheduleParameters(
+          newVestingDuration,
+          newVestingCliff
+        )
+      ).to.be.revertedWithCustomError(
+        presale,
+        'AccessControlUnauthorizedAccount'
+      )
+    })
+
+    it('Prevents setting vesting schedule parameters with cliff greater than duration', async function () {
+      const { presale, owner } = await loadFixture(deployPresaleContract)
+
+      const newVestingDuration = 60 * 60 // 1 hour
+      const newVestingCliff = 60 * 60 * 24 // 1 day
+
+      await expect(
+        presale.connect(owner).setVestingScheduleParameters(
+          newVestingDuration,
+          newVestingCliff
+        )
+      ).to.be.revertedWithCustomError(
+        presale,
+        'VestingCliffMustBeLessThanOrEqualToDuration'
+      )
+    })
   })
 })
