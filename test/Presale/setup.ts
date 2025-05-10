@@ -1,13 +1,13 @@
 import { ethers } from 'hardhat'
 
 import { deployMockStablecoinContract, getSigners } from '../util'
-import { deployTokenContract } from '../Token/setup'
 import { deployVestingContract } from '../Vesting/setup'
 
 export async function deployPresaleContract() {
   const deploy = await deployPresaleContractWithoutVestingAddress()
   const presaleAddress = await deploy.presale.getAddress()
   const vestingAddress = await deploy.vesting.getAddress()
+
   await deploy.presale.connect(deploy.owner).setVestingContractAddress(vestingAddress)
   await deploy.vesting.connect(deploy.owner).grantRole(
     ethers.id('VESTING_ADMIN_ROLE'),

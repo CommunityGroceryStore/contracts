@@ -9,6 +9,10 @@ const config: HardhatUserConfig = {
         salt: '0xdead00000000000000000000000000000000000000000000000000000000dead'
       }
     }
+  },
+  networks: {
+    localhost: { chainId: 539, url: 'http://localhost:7545' },
+    hardhat: { chainId: 539 } // NB: Fix for brave wallet localhost network
   }
 }
 
