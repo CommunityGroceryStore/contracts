@@ -1,0 +1,38 @@
+name: build-communitygrocerystore-contracts
+on:
+  push:
+    branches: 
+      - master
+env:
+  IMAGE_NAME: contracts
+jobs:
+  build-and-push-communitygrocerystore-contracts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: git-checkout-communitygrocerystore-contracts
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: docker-build-communitygrocerystore-contracts
+        run: |
+          docker build . \
+            --file Dockerfile \
+            --tag $IMAGE_NAME \
+            --label "runnumber=${GITHUB_RUN_ID}" \
+            --build-arg NUXT_PUBLIC_COMMIT_HASH=${{ github.sha }}
+      - name: docker-login-ghcr.io
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            docker login ghcr.io -u $ --password-stdin
+      - name: docker-push-communitygrocerystore-contracts
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          docker tag $IMAGE_NAME $IMAGE_ID:${{ github.sha }}
+          docker push $IMAGE_ID:${{ github.sha }}
+          docker tag $IMAGE_NAME $IMAGE_ID:latest
+          docker push $IMAGE_ID:latest
