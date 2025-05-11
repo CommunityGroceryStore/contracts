@@ -39,10 +39,9 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     address newOwner,
     uint256 totalSupply
   ) payable ERC20("Community Grocery Store", "CGS") {
-    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
-    _grantRole(TOKEN_ADMIN_ROLE, msg.sender);
     _grantRole(TOKEN_ADMIN_ROLE, newOwner);
+    _grantRole(TOKEN_ADMIN_ROLE, msg.sender);
 
     _mint(newOwner, totalSupply);
 
@@ -52,9 +51,6 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     addTaxExemption(address(this));
     addTaxExemption(address(0xdead));
     addTaxExemption(address(0));
-
-    renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    renounceRole(TOKEN_ADMIN_ROLE, msg.sender);
   }
 
   receive() external payable {}

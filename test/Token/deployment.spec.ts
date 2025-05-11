@@ -14,17 +14,22 @@ describe('Token - Deployment', function () {
     expect(await token.balanceOf(owner.address)).to.equal(TOTAL_SUPPLY_ATOMIC)
   })
 
-  it('Should grant DEFAULT_ADMIN_ROLE and TOKEN_ADMIN_ROLE to owner', async function () {
+  it('Should grant DEFAULT_ADMIN_ROLE to owner and TOKEN_ADMIN_ROLE to deployer & owner', async function () {
     const {
       token,
-      owner
+      owner,
+      deployer
     } = await loadFixture(deployTokenContract)
 
-    const defaultAdmins = await token.getRoleMembers(await token.DEFAULT_ADMIN_ROLE())
-    const tokenAdmins = await token.getRoleMembers(await token.TOKEN_ADMIN_ROLE())
+    const defaultAdmins = await token.getRoleMembers(
+      await token.DEFAULT_ADMIN_ROLE()
+    )
+    const tokenAdmins = await token.getRoleMembers(
+      await token.TOKEN_ADMIN_ROLE()
+    )
 
     expect(defaultAdmins).to.deep.equal([ owner.address ])
-    expect(tokenAdmins).to.deep.equal([ owner.address ])
+    expect(tokenAdmins).to.deep.equal([ owner.address, deployer.address ])
   })
 
   it('Should deploy with decimals set to 18', async function () {

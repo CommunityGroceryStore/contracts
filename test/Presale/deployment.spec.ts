@@ -12,10 +12,11 @@ describe('Presale - Deployment', function () {
     expect(await presale.isPresalePaused()).to.equal(true)
   })
 
-  it('Grants DEFAULT_ADMIN_ROLE and PRESALE_ADMIN_ROLE to owner', async function () {
+  it('Grants DEFAULT_ADMIN_ROLE to owner and PRESALE_ADMIN_ROLE to deployer & owner', async function () {
     const {
       presale,
-      owner
+      owner,
+      deployer
     } = await loadFixture(deployPresaleContract)
 
     const defaultAdmins = await presale.getRoleMembers(
@@ -26,7 +27,7 @@ describe('Presale - Deployment', function () {
     )
 
     expect(defaultAdmins).to.deep.equal([ owner.address ])
-    expect(presaleAdmins).to.deep.equal([ owner.address ])
+    expect(presaleAdmins).to.deep.equal([ owner.address, deployer.address ])
   })
 
   it('Deploys with owner as treasury address', async function () {

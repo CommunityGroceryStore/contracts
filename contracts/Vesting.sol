@@ -67,6 +67,7 @@ contract CGSVesting is AccessControlEnumerable {
   constructor(address newOwner, address tokenAddress) {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     _grantRole(VESTING_ADMIN_ROLE, newOwner);
+    _grantRole(VESTING_ADMIN_ROLE, msg.sender);
     vestingToken = IERC20(tokenAddress);
     vestingTokenAddress = tokenAddress;
     treasuryAddress = newOwner;

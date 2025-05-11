@@ -100,6 +100,7 @@ contract CGSTokenPresale is AccessControlEnumerable {
   ) {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     _grantRole(PRESALE_ADMIN_ROLE, newOwner);
+    _grantRole(PRESALE_ADMIN_ROLE, msg.sender);
 
     tokenAddress = _tokenAddress;
     presaleToken = IERC20(tokenAddress);

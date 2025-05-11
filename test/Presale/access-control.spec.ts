@@ -8,14 +8,19 @@ describe('Presale - Access Control', function () {
     const {
       presale,
       owner,
-      alice
+      alice,
+      deployer
     } = await loadFixture(deployPresaleContract)
     const presaleAdminRole = await presale.PRESALE_ADMIN_ROLE()
 
     await presale.connect(owner).grantRole(presaleAdminRole, alice.address)
 
     const presaleAdmins = await presale.getRoleMembers(presaleAdminRole)
-    expect(presaleAdmins).to.deep.equal([ owner.address, alice.address ])
+    expect(presaleAdmins).to.deep.equal([
+      owner.address,
+      deployer.address,
+      alice.address
+    ])
   })
 
   it('Prevents non-owners from adding Presale Admins', async function () {
@@ -25,7 +30,9 @@ describe('Presale - Access Control', function () {
     } = await loadFixture(deployPresaleContract)
 
     await expect(
-      presale.connect(alice).grantRole(await presale.PRESALE_ADMIN_ROLE(), alice.address)
+      presale
+        .connect(alice)
+        .grantRole(await presale.PRESALE_ADMIN_ROLE(), alice.address)
     ).to.be.revertedWithCustomError(presale, 'AccessControlUnauthorizedAccount')
   })
 
@@ -33,17 +40,22 @@ describe('Presale - Access Control', function () {
     const {
       presale,
       owner,
-      alice
+      alice,
+      deployer
     } = await loadFixture(deployPresaleContract)
     const presaleAdminRole = await presale.PRESALE_ADMIN_ROLE()
 
     await presale.connect(owner).grantRole(presaleAdminRole, alice.address)
     const presaleAdminsBefore = await presale.getRoleMembers(presaleAdminRole)
-    expect(presaleAdminsBefore).to.deep.equal([ owner.address, alice.address ])
+    expect(presaleAdminsBefore).to.deep.equal([
+      owner.address,
+      deployer.address,
+      alice.address
+    ])
 
     await presale.connect(owner).revokeRole(presaleAdminRole, alice.address)
     const presaleAdmins = await presale.getRoleMembers(presaleAdminRole)
-    expect(presaleAdmins).to.deep.equal([ owner.address ])
+    expect(presaleAdmins).to.deep.equal([ owner.address, deployer.address ])
   })
 
   it('Prevents non-owners from removing Presale Admins', async function () {
@@ -51,13 +63,18 @@ describe('Presale - Access Control', function () {
       presale,
       owner,
       alice,
-      bob
+      bob,
+      deployer
     } = await loadFixture(deployPresaleContract)
     const presaleAdminRole = await presale.PRESALE_ADMIN_ROLE()
 
     await presale.connect(owner).grantRole(presaleAdminRole, alice.address)
     const presaleAdminsBefore = await presale.getRoleMembers(presaleAdminRole)
-    expect(presaleAdminsBefore).to.deep.equal([ owner.address, alice.address ])
+    expect(presaleAdminsBefore).to.deep.equal([
+      owner.address,
+      deployer.address,
+      alice.address
+    ])
 
     await expect(
       presale.connect(bob).revokeRole(presaleAdminRole, alice.address)
