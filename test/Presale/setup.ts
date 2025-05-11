@@ -13,6 +13,9 @@ export async function deployPresaleContract() {
     ethers.id('VESTING_ADMIN_ROLE'),
     presaleAddress
   )
+  await deploy.token
+    .connect(deploy.owner)
+    .transfer(presaleAddress, ethers.parseUnits('1000000', 18))
 
   return deploy
 }

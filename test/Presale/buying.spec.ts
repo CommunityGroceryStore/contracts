@@ -97,9 +97,13 @@ describe('Presale - Buying', function () {
     } = await loadFixture(deployPresaleContract)
     const usdtAddress = await usdt.getAddress()
     await usdt.mint(alice.address, ethers.parseUnits('1000', 6))
-
+    const tokenAddress = await token.getAddress()
     const presaleAddress = await presale.getAddress()
-    await token.connect(owner).transfer(presaleAddress, ethers.parseUnits('1', 18))
+    await presale.connect(owner).withdrawERC20(tokenAddress)
+    await token.connect(owner).transfer(
+      presaleAddress,
+      ethers.parseUnits('1', 18)
+    )
 
     await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
     await presale.connect(owner).unpausePresale()
@@ -208,5 +212,41 @@ describe('Presale - Buying', function () {
       ethers.parseUnits('0.001', 6),
       ethers.parseUnits('0.01', 6)
     )
+  })
+
+  it('Tracks amount of presale tokens sold', async function () {
+    const {
+      presale,
+      token,
+      usdt,
+      owner,
+      alice
+    } = await loadFixture(deployPresaleContract)
+    const usdtAddress = await usdt.getAddress()
+    await usdt.mint(alice.address, ethers.parseUnits('1000', 6))
+    const presaleAddress = await presale.getAddress()
+    await token
+      .connect(owner)
+      .transfer(presaleAddress, ethers.parseUnits('1000', 18))
+
+    await presale.connect(owner).addPaymentToken(usdtAddress, 40_000)
+    await presale.connect(owner).unpausePresale()
+    expect(await presale.isPresalePaused()).to.be.false
+
+    const usdtAmount = ethers.parseUnits('0.12', 6)
+    await usdt.connect(alice).approve(presaleAddress, usdtAmount)
+
+    const buyTx = await presale.connect(alice).buy(usdtAmount, usdtAddress)
+    expect(buyTx).to.emit(presale, 'TokensPurchased').withArgs(
+      alice.address,
+      ethers.parseUnits('3', 18),
+      usdtAddress,
+      usdtAmount,
+      40_000
+    )
+
+    expect(
+      await presale.presaleTokensSold()
+    ).to.equal(ethers.parseUnits('3', 18))
   })
 })

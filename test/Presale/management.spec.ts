@@ -35,6 +35,25 @@ describe('Presale - Management', function () {
       )
     })
 
+    it('Prevents presale from starting without tokens', async function () {
+      const { presale, owner, vesting } = await loadFixture(deployPresaleContractWithoutVestingAddress)
+      const vestingAddress = await vesting.getAddress()
+      const presaleAddress = await presale.getAddress()
+      await presale.connect(owner).setVestingContractAddress(vestingAddress)
+      await vesting.connect(owner).grantRole(
+        ethers.id('VESTING_ADMIN_ROLE'),
+        presaleAddress
+      )
+
+      expect(await presale.isPresalePaused()).to.be.true
+      await expect(
+        presale.connect(owner).unpausePresale()
+      ).to.be.revertedWithCustomError(
+        presale,
+        'PresaleContractDoesNotHaveTokens'
+      )
+    })
+
     it('Allows Presale Admins to pause presale', async function () {
       const { presale, owner } = await loadFixture(deployPresaleContract)
 

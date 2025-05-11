@@ -91,6 +91,7 @@ contract CGSTokenPresale is AccessControlEnumerable {
     uint256 vestingDuration,
     uint256 vestingCliff
   );
+  error PresaleContractDoesNotHaveTokens();
 
   constructor(
     address newOwner,
@@ -151,6 +152,10 @@ contract CGSTokenPresale is AccessControlEnumerable {
     require(
       vestingContract.hasRole(VESTING_ADMIN_ROLE, address(this)),
       PresaleContractDoesNotHaveVestingAdminRoleinVestingContract()
+    );
+    require(
+      presaleToken.balanceOf(address(this)) > 0,
+      PresaleContractDoesNotHaveTokens()
     );
 
     isPresalePaused = false;
