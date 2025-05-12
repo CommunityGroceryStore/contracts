@@ -97,7 +97,8 @@ contract CGSTokenPresale is AccessControlEnumerable {
     address newOwner,
     address _tokenAddress,
     uint256 initialVestingDuration,
-    uint256 initialVestingCliff
+    uint256 initialVestingCliff,
+    address _vestingContractAddress
   ) {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     _grantRole(PRESALE_ADMIN_ROLE, newOwner);
@@ -108,6 +109,7 @@ contract CGSTokenPresale is AccessControlEnumerable {
     treasuryAddress = newOwner;
     vestingSchedule.vestingDuration = initialVestingDuration;
     vestingSchedule.vestingCliff = initialVestingCliff;
+    setVestingContractAddress(_vestingContractAddress);
   }
 
   function setVestingScheduleParameters(
@@ -147,6 +149,10 @@ contract CGSTokenPresale is AccessControlEnumerable {
   function unpausePresale() public onlyRole(PRESALE_ADMIN_ROLE) {
     require(
       vestingContractAddress != address(0),
+      VestingContractAddressNotSet()
+    );
+        require(
+      vestingContractAddress != address(0xdead),
       VestingContractAddressNotSet()
     );
     require(

@@ -1,7 +1,10 @@
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { expect } from 'chai'
 
-import { deployPresaleContract } from './setup'
+import {
+  deployPresaleContract,
+  deployPresaleContractWithoutVestingAddress
+} from './setup'
 
 describe('Presale - Deployment', function () {
   it('Deploys with presale paused', async function () {
@@ -37,6 +40,16 @@ describe('Presale - Deployment', function () {
     } = await loadFixture(deployPresaleContract)
 
     expect(await presale.treasuryAddress()).to.equal(owner.address)
+  })
+
+  it('Deploys with vesting contract address set', async function () {
+    const {
+      presale,
+      vesting
+    } = await loadFixture(deployPresaleContractWithoutVestingAddress)
+    const vestingContractAddress = await vesting.getAddress()
+
+    expect(await presale.vestingContract()).to.equal(vestingContractAddress)
   })
 
   it('Deploys with vesting schedule parameters set', async function () {

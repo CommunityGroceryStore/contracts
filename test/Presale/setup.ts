@@ -43,7 +43,8 @@ export async function deployPresaleContractWithoutVestingAddress() {
     SIGNERS.owner,
     tokenAddress,
     INITIAL_VESTING_DURATION,
-    INITIAL_VESTING_CLIFF
+    INITIAL_VESTING_CLIFF,
+    await vesting.getAddress()
   )
 
   return {

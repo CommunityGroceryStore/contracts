@@ -12,6 +12,8 @@ describe('Presale - Management', function () {
     it('Prevents presale from starting without vesting contract address', async function () {
       const { presale, owner } = await loadFixture(deployPresaleContractWithoutVestingAddress)
 
+      await presale.connect(owner).setVestingContractAddress(ethers.ZeroAddress)
+
       expect(await presale.isPresalePaused()).to.be.true
       await expect(
         presale.connect(owner).unpausePresale()
