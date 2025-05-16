@@ -8,7 +8,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract CGSVesting is AccessControlEnumerable {
   bytes32 public constant VESTING_ADMIN_ROLE = keccak256("VESTING_ADMIN_ROLE");
-  bytes32 public constant VESTING_CREATOR_ROLE = keccak256("VESTING_CREATOR_ROLE");
+  bytes32 public constant VESTING_CREATOR_ROLE = keccak256(
+    "VESTING_CREATOR_ROLE"
+  );
 
   IERC20 public vestingToken;
   address public vestingTokenAddress;
@@ -64,6 +66,7 @@ contract CGSVesting is AccessControlEnumerable {
     address beneficiary,
     uint256 claimableAmount
   );
+  error CannotWithdrawVestingToken();
 
   constructor(address newOwner, address tokenAddress) {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
@@ -78,6 +81,8 @@ contract CGSVesting is AccessControlEnumerable {
   }
 
   function withdrawERC20(address _token) external onlyRole(VESTING_ADMIN_ROLE) {
+    require(_token != vestingTokenAddress, CannotWithdrawVestingToken());
+
     IERC20 token = IERC20(_token);
     uint256 balance = token.balanceOf(address(this));
     require(balance > 0, "No tokens to withdraw");
