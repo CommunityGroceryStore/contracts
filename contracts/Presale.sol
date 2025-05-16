@@ -21,7 +21,7 @@ interface IVesting is IAccessControlEnumerable {
 
 contract CGSTokenPresale is AccessControlEnumerable {
   bytes32 public constant PRESALE_ADMIN_ROLE = keccak256("PRESALE_ADMIN_ROLE");
-  bytes32 public constant VESTING_ADMIN_ROLE = keccak256("VESTING_ADMIN_ROLE");
+  bytes32 public constant VESTING_CREATOR_ROLE = keccak256("VESTING_CREATOR_ROLE");
   uint256 public constant MINIMUM_PRESALE_PURCHASE = 1e4; // $0.01 USDT/USDC
 
   bool public isPresalePaused = true;
@@ -61,7 +61,7 @@ contract CGSTokenPresale is AccessControlEnumerable {
 
   error VestingCliffMustBeLessThanOrEqualToDuration();
   error VestingContractAddressNotSet();
-  error PresaleContractDoesNotHaveVestingAdminRoleinVestingContract();
+  error PresaleContractDoesNotHaveVestingCreatorRoleinVestingContract();
   error InvalidTreasuryAddress();
   error PresaleIsNotPaused();
   error PresaleIsPaused();
@@ -156,8 +156,8 @@ contract CGSTokenPresale is AccessControlEnumerable {
       VestingContractAddressNotSet()
     );
     require(
-      vestingContract.hasRole(VESTING_ADMIN_ROLE, address(this)),
-      PresaleContractDoesNotHaveVestingAdminRoleinVestingContract()
+      vestingContract.hasRole(VESTING_CREATOR_ROLE, address(this)),
+      PresaleContractDoesNotHaveVestingCreatorRoleinVestingContract()
     );
     require(
       presaleToken.balanceOf(address(this)) > 0,

@@ -9,7 +9,7 @@ import { deployVestingContract } from './setup'
 
 describe('Vesting - Token Vesting', function () {
   describe('Creating Vesting Schedules', function () {
-    it('Allows Vesting Admins to add new vesting schedules', async function () {
+    it('Allows Vesting Creator to add new vesting schedules', async function () {
       const {
         vesting,
         alice,
@@ -144,7 +144,7 @@ describe('Vesting - Token Vesting', function () {
       }
       const vestingAddress = await vesting.getAddress()
       await vesting.connect(owner).grantRole(
-        ethers.id('VESTING_ADMIN_ROLE'),
+        ethers.id('VESTING_CREATOR_ROLE'),
         alice.address
       )
       await token.connect(alice).approve(
@@ -202,7 +202,7 @@ describe('Vesting - Token Vesting', function () {
   })
 
   describe('Updating Vesting Schedules', function () {
-    it('Allows Vesting Admins to update vesting schedules token amount', async function () {
+    it('Allows Vesting Creators to update vesting schedules token amount', async function () {
       const {
         vesting,
         alice,

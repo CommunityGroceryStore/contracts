@@ -8,6 +8,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract CGSVesting is AccessControlEnumerable {
   bytes32 public constant VESTING_ADMIN_ROLE = keccak256("VESTING_ADMIN_ROLE");
+  bytes32 public constant VESTING_CREATOR_ROLE = keccak256("VESTING_CREATOR_ROLE");
 
   IERC20 public vestingToken;
   address public vestingTokenAddress;
@@ -68,6 +69,9 @@ contract CGSVesting is AccessControlEnumerable {
     _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     _grantRole(VESTING_ADMIN_ROLE, newOwner);
     _grantRole(VESTING_ADMIN_ROLE, msg.sender);
+    _grantRole(VESTING_CREATOR_ROLE, newOwner);
+    _grantRole(VESTING_CREATOR_ROLE, msg.sender);
+    _setRoleAdmin(VESTING_CREATOR_ROLE, VESTING_ADMIN_ROLE);
     vestingToken = IERC20(tokenAddress);
     vestingTokenAddress = tokenAddress;
     treasuryAddress = newOwner;
@@ -101,7 +105,7 @@ contract CGSVesting is AccessControlEnumerable {
     uint256 vestingStart,
     uint256 vestingDuration,
     uint256 vestingCliff
-  ) external onlyRole(VESTING_ADMIN_ROLE) returns (bool) {
+  ) external onlyRole(VESTING_CREATOR_ROLE) returns (bool) {
     require(beneficiary != address(0), InvalidBeneficiaryAddress());
     require(beneficiary != address(0xdead), InvalidBeneficiaryAddress());
     require(amount > 0, VestingInvalidAmount());

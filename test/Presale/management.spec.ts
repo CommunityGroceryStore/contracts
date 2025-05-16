@@ -23,7 +23,7 @@ describe('Presale - Management', function () {
       )
     })
 
-    it('Prevents presale from starting without being set as Vesting Admin on Vesting contract', async function () {
+    it('Prevents presale from starting without being set as Vesting Creator on Vesting contract', async function () {
       const { presale, owner, vesting } = await loadFixture(deployPresaleContractWithoutVestingAddress)
       const vestingAddress = await vesting.getAddress()
       await presale.connect(owner).setVestingContractAddress(vestingAddress)
@@ -33,7 +33,7 @@ describe('Presale - Management', function () {
         presale.connect(owner).unpausePresale()
       ).to.be.revertedWithCustomError(
         presale,
-        'PresaleContractDoesNotHaveVestingAdminRoleinVestingContract'
+        'PresaleContractDoesNotHaveVestingCreatorRoleinVestingContract'
       )
     })
 
@@ -43,7 +43,7 @@ describe('Presale - Management', function () {
       const presaleAddress = await presale.getAddress()
       await presale.connect(owner).setVestingContractAddress(vestingAddress)
       await vesting.connect(owner).grantRole(
-        ethers.id('VESTING_ADMIN_ROLE'),
+        ethers.id('VESTING_CREATOR_ROLE'),
         presaleAddress
       )
 

@@ -10,7 +10,7 @@ export async function deployPresaleContract() {
 
   await deploy.presale.connect(deploy.owner).setVestingContractAddress(vestingAddress)
   await deploy.vesting.connect(deploy.owner).grantRole(
-    ethers.id('VESTING_ADMIN_ROLE'),
+    ethers.id('VESTING_CREATOR_ROLE'),
     presaleAddress
   )
   await deploy.token
