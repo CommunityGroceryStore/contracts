@@ -53,8 +53,6 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     addTaxExemption(address(0));
   }
 
-  receive() external payable {}
-
   function addTaxExemption(address account) public onlyRole(TOKEN_ADMIN_ROLE) {
     isExemptFromTax[account] = true;
     emit TaxExemptionAdded(account);
@@ -138,14 +136,6 @@ contract CGSToken is ERC20, AccessControlEnumerable {
     require(newTreasuryAddress != address(0xdead), InvalidTreasuryAddress());
     treasuryAddress = newTreasuryAddress;
     emit TreasuryAddressSet(newTreasuryAddress);
-  }
-
-  function withdrawETH() external onlyRole(TOKEN_ADMIN_ROLE) {
-    uint256 balance = address(this).balance;
-    require(balance > 0, "No ETH to withdraw");
-    
-    (bool success, ) = payable(treasuryAddress).call{value: balance}("");
-    require(success, "ETH withdrawal failed");
   }
 
   function withdrawERC20(

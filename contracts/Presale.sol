@@ -151,7 +151,7 @@ contract CGSTokenPresale is AccessControlEnumerable {
       vestingContractAddress != address(0),
       VestingContractAddressNotSet()
     );
-        require(
+    require(
       vestingContractAddress != address(0xdead),
       VestingContractAddressNotSet()
     );
