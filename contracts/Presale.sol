@@ -221,7 +221,7 @@ contract CGSTokenPresale is AccessControlEnumerable {
     IERC20 paymentToken = IERC20(paymentTokenAddress);
     uint256 rate = paymentTokenRates[paymentTokenAddress];
 
-    uint256 presaleTokenAmount = (paymentTokenAtomicAmount / rate) * 1e18;
+    uint256 presaleTokenAmount = (paymentTokenAtomicAmount * 1e18) / rate;
     
     // Check if enough tokens are available
     require(

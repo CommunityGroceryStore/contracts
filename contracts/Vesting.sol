@@ -177,16 +177,15 @@ contract CGSVesting is AccessControlEnumerable {
     require(schedule.initialized, VestingNoSchedule());
     ( , uint256 claimableAmount ) = getVestedAndClaimableTokens(msg.sender);
     require(claimableAmount > 0, VestingNoTokensToClaim());
-
-    schedule.claimedAmount = schedule.claimedAmount + claimableAmount;
     require(
-      schedule.claimedAmount <= schedule.totalAmount,
+      schedule.claimedAmount + claimableAmount <= schedule.totalAmount,
       ClaimAmountExceedsTotalAmount(
         msg.sender,
         schedule.claimedAmount,
         schedule.totalAmount
       )
     );
+    schedule.claimedAmount = schedule.claimedAmount + claimableAmount;
     require(
       vestingToken.transfer(msg.sender, claimableAmount),
       ClaimTokenTransferFailed(
